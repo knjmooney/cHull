@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "point.hpp"
+#include "errorMessages.hpp"
 
 namespace CompGeom {
 
@@ -29,16 +30,16 @@ namespace CompGeom {
 
   private:
     // std::vector<int> const dims;
-    int const dim;
+    size_t const dim;
     std::vector<Point> coords;
 
     // Maybe useful, not necessarily....
     typedef std::uniform_real_distribution<double> urdist;
   public:
-    Geometry(int _dim) : dim{_dim} {}
+    Geometry(size_t _dim) : dim{_dim} {}
     
     // Const method, unsure if this is necessary
-    int getDim() const { return dim; }
+    size_t getDim() const { return dim; }
     Point getAPoint () { 
       if ( coords.size() >0 ) return coords[0]; 
       else {
@@ -70,7 +71,7 @@ namespace CompGeom {
 
       for ( int i=0; i<N; i++ ) {
 	std::vector<double> point;
-	for ( int j=0; j<dim; j++ ) {
+	for ( size_t j=0; j<dim; j++ ) {
 	  point.push_back( dist(gen) );
 	}
 
@@ -82,6 +83,17 @@ namespace CompGeom {
     void print() {
       for ( auto i : coords ) {
       	std::cout << i << std::endl;
+      }
+    }
+
+    void translate(std::vector<double> shift) {
+      if ( shift.size() != dim ) {
+	errorM("Shift vector must be of same dimension as geometry\n");
+      }
+      for ( auto p : coords ) {
+	for ( size_t i=0; i<size(); i++ ) {
+	  p[i] += shift[i];
+	}
       }
     }
   };

@@ -19,7 +19,6 @@
 
 using namespace std;
 
-
 // Gift wrap algorithm, this is much messier than I expected
 vector< CompGeom::Point > giftWrap(const CompGeom::Geometry &geom) {
   if ( geom.getDim() != 2 ) {    
@@ -44,8 +43,6 @@ vector< CompGeom::Point > giftWrap(const CompGeom::Geometry &geom) {
     double max_angle = -numeric_limits<double>::max();	
     CompGeom::Point dir_to_point = dir_of_gift_wrap;
 
-    // cout << "\n" << dir_of_gift_wrap << "\t" << *curr_on_hull_it << "\n";
-
     // Loop over all points and calculate the angle
     // made with the gift wrap
     for ( auto it = geom.begin(); it != geom.end(); it++ ) {
@@ -66,6 +63,20 @@ vector< CompGeom::Point > giftWrap(const CompGeom::Geometry &geom) {
     
   // } while (0);
   } while ( first_on_hull_it != curr_on_hull_it );
+  return cHull;
+}
+
+
+vector< CompGeom::Point > grahamScan(const CompGeom::Geometry &geom) {
+  if ( geom.getDim() != 2 ) {    
+    errorM("Can only graham scan 2D geometries\n");
+  }  
+  if ( geom.size() < 3 ) {
+    errorM("Need more than 2 points to do Graham Scan\n");
+  }
+
+  vector < CompGeom::Point > cHull;
+
   return cHull;
 }
 

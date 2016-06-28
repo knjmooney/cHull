@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <ostream>
 #include <vector>
@@ -30,8 +31,9 @@ namespace CompGeom {
     std::vector<double> coord;
 
   public:
-    Point ( std::vector<double> _coord) : coord{_coord} {} 
-    ~Point () {}
+    Point ( size_t _dim ) : coord { std::vector<double>(_dim) } {} 
+    Point ( std::vector<double> _coord ) : coord{_coord} {} 
+    ~Point() {}
 
     typedef typename std::vector<double>::iterator iterator;
     typedef typename std::vector<double>::const_iterator const_iterator;
@@ -92,10 +94,12 @@ namespace CompGeom {
   }
 
   bool operator==( const Point &p1, const Point &p2 ) {
-    for ( size_t i = 0; i<p1.size(); i++ ) {
-      if ( p1[i] != p2[i] ) return false;
-    } 
-    return true;
+    if ( p1.size() != p2.size() ) return false;
+    else return std::equal ( p1.begin(), p1.end(), p2.begin() );
+    // for ( size_t i = 0; i<p1.size(); i++ ) {
+    //   if ( p1[i] != p2[i] ) return false;
+    // } 
+    // return true;
   }
 
   bool operator!=( const Point &p1, const Point &p2 ) {

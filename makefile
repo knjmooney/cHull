@@ -3,9 +3,9 @@ CXX    = g++
 NVCC   = nvcc
 LINKER = nvcc
 
-CFLAGS    = -O3 -finline-functions -ffast-math -fomit-frame-pointer -funroll-loops \
-	-fdiagnostics-color=auto
-CXXFLAGS  = -g -pedantic -W -Wall -Wextra -L/usr/lib --std=c++11 $(CFLAGS)
+CFLAGS    = -O2 #-finline-functions -ffast-math -funroll-loops \
+		-fdiagnostics-color=auto
+CXXFLAGS  = -pedantic -W -Wall -Wextra --std=c++11 $(CFLAGS)
 NVCCFLAGS = --use_fast_math --std=c++11 
 
 SRC       = ./src
@@ -29,9 +29,12 @@ $(BIN)/%.o: $(SRC)/%.cpp makefile
 	$(CXX) $(CXXFLAGS) -c $(INCPATH) $< -o $@
 
 plot: $(EXEC)
-	./bin/convexHull > temp.dat 
-	gnuplot -e "plot 'temp.dat' index 0 t '', 'temp.dat' index 1 t '' w lp; pause mouse any"
+	$(EXEC) > temp.dat 
+	gnuplot -e "plot 'temp.dat' u 1:2 index 0 t '', 'temp.dat' index 1 t '' w lp; pause mouse any"
 	rm temp.dat
+
+test: $(EXEC)
+	$(EXEC)
 
 install:
 

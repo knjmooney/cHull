@@ -9,6 +9,7 @@
  * ToDo:
  ******************************************************/
 
+#pragma once
 
 // This is a std algorithm...
 CompGeom::Geometry::const_iterator findMinX(const CompGeom::Geometry &geom) {
@@ -30,6 +31,12 @@ inline double innerProduct ( const T &x, const T &y ) {
     sum += x[i]*y[i];
   }
   return sum;
+}
+
+// Caluclates the cross product of a 2D vector
+template < typename T >
+inline double cross2Product ( const T &x, const T &y ) {
+  return x[0]*y[1] - x[1]*y[0];
 }
 
 // Caluclates the 2 norm of a vector

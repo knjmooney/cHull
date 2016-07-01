@@ -18,6 +18,9 @@
 
 #pragma once
 
+#ifndef __POINT_H_
+#define __POINT_H_
+
 #include <algorithm>
 #include <cmath>
 #include <ostream>
@@ -58,7 +61,7 @@ namespace CompGeom {
     friend float operator* ( const Point &p1, const Point &p2 );
   };
 
-  float Point::length() const { 
+  inline float Point::length() const { 
     float sum = 0.0;
     for ( auto i : coord ) {
       sum += i*i;
@@ -69,7 +72,7 @@ namespace CompGeom {
   // This is defined as a friend, not sure why it didn't work when it was a memeber function...
   // Should most likely exclude pretty formatting, so it can be used for plotting later
   // Could implement a setw
-  std::ostream& operator<<(std::ostream& os, const Point &p)
+  inline std::ostream& operator<<(std::ostream& os, const Point &p)
   {
     auto it = p.coord.begin();
     for ( ; it+1 != p.coord.end(); it++ ) {
@@ -79,14 +82,14 @@ namespace CompGeom {
     return os;
   }
   
-  Point operator- ( const Point &p1, const Point &p2 ) {
+  inline Point operator- ( const Point &p1, const Point &p2 ) {
     Point p_diff(p1);
     std::transform ( p_diff.begin(), p_diff.end(), p2.begin(),
 		     p_diff.begin(), std::minus<float>() );
     return p_diff;
   }
   
-  Point operator- ( const Point &p) {  
+  inline Point operator- ( const Point &p) {  
     Point p_inv(p);
     for ( size_t i=0; i<p.size(); i++ ) {
       p_inv[i] = -p[i];
@@ -94,17 +97,17 @@ namespace CompGeom {
     return p_inv;
   }
 
-  bool operator==( const Point &p1, const Point &p2 ) {
+  inline bool operator==( const Point &p1, const Point &p2 ) {
     if ( p1.size() != p2.size() ) return false;
     else return std::equal ( p1.begin(), p1.end(), p2.begin() );
   }
 
-  bool operator!=( const Point &p1, const Point &p2 ) {
+  inline bool operator!=( const Point &p1, const Point &p2 ) {
     return ! (p1 == p2);
   }
 
   // Should I check p1.size() == p2.size()?
-  float operator* ( const Point &p1, const Point &p2 ) {
+  inline float operator* ( const Point &p1, const Point &p2 ) {
     float sum = 0;
     for ( size_t i=0; i<p1.size(); i++ ) {
       sum += p1[i]*p2[i];
@@ -112,3 +115,5 @@ namespace CompGeom {
     return sum;
   }
 }
+
+#endif 

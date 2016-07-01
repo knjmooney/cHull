@@ -17,6 +17,9 @@
 
 #pragma once
 
+#ifndef __GEOMETRY_H_
+#define __GEOMETRY_H_
+
 #include <fstream>
 #include <iostream>
 #include <random>
@@ -60,14 +63,14 @@ namespace CompGeom {
     // Adds N random points, in a box around the origin
     // Bad naming convention....
     // normal_dist gives warning
-    void addRandom(int N);
-    void translate(const std::vector<float> &shift);
+    inline void addRandom(int N);
+    inline void translate(const std::vector<float> &shift);
 
-    void print();
-    void printHull(const std::string &file_name, const std::vector<size_t> &cHull);
+    inline void print();
+    inline void printHull(const std::string &file_name, const std::vector<size_t> &cHull);
   };
 
-  void Geometry::addRandom(int N) {    
+  inline void Geometry::addRandom(int N) {    
     std::default_random_engine gen(1432543);
     // urdist dist(-1.0,1.0);
     std::normal_distribution<float> dist(0.0,1.0);
@@ -85,13 +88,13 @@ namespace CompGeom {
   }
 
 
-  void Geometry::print() {
+  inline void Geometry::print() {
     for ( auto i : coords ) {
       std::cout << i << std::endl;
     }
   }
 
-  void Geometry::translate(const std::vector<float> &shift) {
+  inline void Geometry::translate(const std::vector<float> &shift) {
     if ( shift.size() != dim ) {
       errorM("Shift vector must be of same dimension as geometry\n");
     }
@@ -102,7 +105,7 @@ namespace CompGeom {
     }
   }
 
-  void Geometry::printHull(const std::string &file_name, const std::vector<size_t> &cHull) {
+  inline void Geometry::printHull(const std::string &file_name, const std::vector<size_t> &cHull) {
     std::ofstream file ( file_name );
     file << "META DATA \n";
     file << "TYPE\t\t" << "Convex Hull" << "\n";
@@ -118,4 +121,11 @@ namespace CompGeom {
     file << std::endl;
   }
 
+  
+  // template < typename >
+  inline void jamesCanBeCorrectSometimes() {
+    return;
+  }
 }
+
+#endif

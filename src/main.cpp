@@ -1,4 +1,4 @@
-/***************************************************
+/******************************************************
  * Name    : main.cpp
  * Author  : Kevin Mooney
  * Created : 13/06/16
@@ -20,6 +20,7 @@
 #include "geometry.hpp"
 #include "errorMessages.hpp"
 #include "pointOperations.hpp"
+#include "cudaHull.hpp"
 
 using namespace std;
 using namespace std::chrono;
@@ -199,7 +200,7 @@ vector< size_t > grahamScan(CompGeom::Geometry &geom) {
 }
 
 int main() {
-  CompGeom::Geometry geom{3};
+  CompGeom::Geometry geom{2};
   
   geom.addRandom(100);
 
@@ -218,6 +219,8 @@ int main() {
 
 
   geom.printHull ( "data/test.dat", hull2 );
+
+  cudaHull ( hull2 );
 
   // cout << "\n\n";
   // for ( auto i : hull ) {

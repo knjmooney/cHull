@@ -1,29 +1,27 @@
 MAKE   = make
 CXX    = g++
 NVCC   = nvcc
-LINKER = nvcc
+LINKER = g++
 
-CFLAGS    = -O2 #-finline-functions -ffast-math -funroll-loops \
-		-fdiagnostics-color=auto
-CXXFLAGS  = -pedantic -W -Wall -Wextra --std=c++11 $(CFLAGS)
-NVCCFLAGS = --use_fast_math --std=c++11 
+CFLAGS    = -O2 #-fdiagnostics-color=auto #-finline-functions -ffast-math -funroll-loops 
+CXXFLAGS  = --std=c++11 $(CFLAGS)
+NVCCFLAGS = --gpu-architecture=sm_30 --use_fast_math --std=c++11 
 
 SRC       = ./src
 BIN       = ./bin
 INCPATH   = -I$(SRC)
 
-TARGET    = $(BIN)/main.o
+TARGET    = $(BIN)/main.o $(BIN)/cudaHull.o
 EXEC      = $(BIN)/convexHull
 
 
 all: $(EXEC)
 
 $(EXEC): $(TARGET)
-	$(CXX) -Wall -o ${EXEC} ${TARGET}	
-# $(LINKER) -o ${EXEC} ${TARGET} 	
+	$(LINKER) -o ${EXEC} ${TARGET} 	
 
-%.o: %.cu makefile
-	$(NVCC) $(NVCCFLAGS) -c $(INCPATH) $<
+$(BIN)/%.o: $(SRC)/%.cu makefile
+	$(NVCC) $(NVCCFLAGS) -c $(INCPATH) $< -o $@
 
 $(BIN)/%.o: $(SRC)/%.cpp makefile
 	$(CXX) $(CXXFLAGS) -c $(INCPATH) $< -o $@

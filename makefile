@@ -36,7 +36,10 @@ plot: $(EXEC)
 test: $(EXEC)
 	$(EXEC)
 
+unit-tests: $(EXEC)
+	make -C unit_tests test
+
 install:
 
 clean:
-	rm -f *.o ${TARGET} ${EXEC}
+	rm -f ${TARGET} ${EXEC}

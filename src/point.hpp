@@ -28,36 +28,38 @@ namespace CompGeom {
   class Point {
    
   private:
-    std::vector<double> coord;
+    std::vector<float> coord;
 
   public:
-    Point ( size_t _dim ) : coord { std::vector<double>(_dim) } {} 
-    Point ( std::vector<double> _coord ) : coord{_coord} {} 
+    explicit Point ( size_t _dim ) : coord { std::vector<float>(_dim,0.0) } {} 
+    Point ( std::vector<float> _coord ) : coord{_coord} {} 
     ~Point() {}
+    
+    Point operator= ( std::initializer_list<float> _p ) { return coord = _p; }
 
-    typedef typename std::vector<double>::iterator iterator;
-    typedef typename std::vector<double>::const_iterator const_iterator;
+    typedef typename std::vector<float>::iterator iterator;
+    typedef typename std::vector<float>::const_iterator const_iterator;
     iterator        begin()        { return coord.begin(); }
     iterator        end()          { return coord.end();   }
     const_iterator  begin() const  { return coord.begin(); }
     const_iterator  end()   const  { return coord.end();   }
 
     size_t size() const  { return coord.size(); }
-    double length() const;
+    float length() const;
 
     // Operator overloading
-    double operator   [](int i) const  {return coord[i];}
-    double &operator  [](int i)        {return coord[i];}
+    float operator   [](int i) const  {return coord[i];}
+    float &operator  [](int i)        {return coord[i];}
     friend std::ostream& operator<<(std::ostream& os, const Point &p);
     friend Point operator- ( const Point &p );
     friend Point operator- ( const Point &p1, const Point &p2 );
     friend bool  operator==( const Point &p1, const Point &p2 );
     friend bool  operator!=( const Point &p1, const Point &p2 );
-    friend double operator* ( const Point &p1, const Point &p2 );
+    friend float operator* ( const Point &p1, const Point &p2 );
   };
 
-  double Point::length() const { 
-    double sum = 0.0;
+  float Point::length() const { 
+    float sum = 0.0;
     for ( auto i : coord ) {
       sum += i*i;
     }
@@ -79,9 +81,8 @@ namespace CompGeom {
   
   Point operator- ( const Point &p1, const Point &p2 ) {
     Point p_diff(p1);
-    for ( size_t i=0; i<p1.size(); i++ ) {
-      p_diff[i] -= p2[i];
-    }
+    std::transform ( p_diff.begin(), p_diff.end(), p2.begin(),
+		     p_diff.begin(), std::minus<float>() );
     return p_diff;
   }
   
@@ -96,10 +97,6 @@ namespace CompGeom {
   bool operator==( const Point &p1, const Point &p2 ) {
     if ( p1.size() != p2.size() ) return false;
     else return std::equal ( p1.begin(), p1.end(), p2.begin() );
-    // for ( size_t i = 0; i<p1.size(); i++ ) {
-    //   if ( p1[i] != p2[i] ) return false;
-    // } 
-    // return true;
   }
 
   bool operator!=( const Point &p1, const Point &p2 ) {
@@ -107,8 +104,8 @@ namespace CompGeom {
   }
 
   // Should I check p1.size() == p2.size()?
-  double operator* ( const Point &p1, const Point &p2 ) {
-    double sum = 0;
+  float operator* ( const Point &p1, const Point &p2 ) {
+    float sum = 0;
     for ( size_t i=0; i<p1.size(); i++ ) {
       sum += p1[i]*p2[i];
     }

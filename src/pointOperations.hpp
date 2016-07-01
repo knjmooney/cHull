@@ -24,9 +24,9 @@ CompGeom::Geometry::const_iterator findMinX(const CompGeom::Geometry &geom) {
 
 // Caluclates the 2 norm of a vector
 template < typename T >
-inline double innerProduct ( const T &x, const T &y ) {
+inline float innerProduct ( const T &x, const T &y ) {
   //  if ( x.size() != y.size() )
-  double sum = 0.0;
+  float sum = 0.0;
   for ( size_t i=0; i<x.size(); i++ ) {
     sum += x[i]*y[i];
   }
@@ -35,20 +35,20 @@ inline double innerProduct ( const T &x, const T &y ) {
 
 // Caluclates the cross product of a 2D vector
 template < typename T >
-inline double cross2Product ( const T &x, const T &y ) {
+inline float cross2Product ( const T &x, const T &y ) {
   return x[0]*y[1] - x[1]*y[0];
 }
 
 // Caluclates the 2 norm of a vector
 template < typename T >
-inline double norm ( const T &x ) {
+inline float norm ( const T &x ) {
   return sqrt ( innerProduct ( x, x ) );
 }
 
 // T needs [] overloaded and routines length() and size()
 // Should get rid of length() dependence
 template < typename T >
-double innerAngle ( const T &x, const T &y ) {
+float innerAngle ( const T &x, const T &y ) {
   if ( x.size() != 2 && y.size() != 2 ) {
     std::cerr << "innerAngle: Can only calculate 2D points\n";
     return 0.0;
@@ -58,19 +58,19 @@ double innerAngle ( const T &x, const T &y ) {
 
 
 template < typename T >
-double antiClockwiseAngle ( const T &x, const T &y ) {
+float antiClockwiseAngle ( const T &x, const T &y ) {
   if ( x.size() != 2 || y.size() != 2 ) {
     errorM("Can only find angle for 2D points");
   }
   // Shamelessly stolen from Stack Overflow
-  double dot = x[0]*y[0] + x[1]*y[1];
-  double det = x[0]*y[1] - x[1]*y[0];
+  float dot = x[0]*y[0] + x[1]*y[1];
+  float det = x[0]*y[1] - x[1]*y[0];
   return atan2(det, dot);
 }
 
 // Calculates the cosine of the angle between two vectors
 // May need to rewrite this to be specific to a plane
 template < typename T >
-inline double cosv2 ( const T &x, const T &y ) {
+inline float cosv2 ( const T &x, const T &y ) {
   return innerProduct ( x, y ) / ( norm ( x ) * norm ( y ) );
 }

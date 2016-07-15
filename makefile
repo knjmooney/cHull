@@ -1,11 +1,11 @@
 MAKE   = make
 CXX    = g++
 NVCC   = nvcc
-LINKER = g++
+LINKER = nvcc
 
 CFLAGS    = -O2 #-fdiagnostics-color=auto #-finline-functions -ffast-math -funroll-loops 
-CXXFLAGS  = --std=c++11 $(CFLAGS)
-NVCCFLAGS = --gpu-architecture=sm_30 --use_fast_math --std=c++11 
+CXXFLAGS  = -pedantic -W -Wall -Wextra --std=c++11 $(CFLAGS)
+NVCCFLAGS = --use_fast_math --std=c++11 
 
 SRC       = ./src
 BIN       = ./bin

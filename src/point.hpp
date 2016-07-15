@@ -18,9 +18,6 @@
 
 #pragma once
 
-#ifndef __POINT_H_
-#define __POINT_H_
-
 #include <algorithm>
 #include <cmath>
 #include <ostream>
@@ -116,4 +113,4 @@ namespace CompGeom {
   }
 }
 
-#endif 
+

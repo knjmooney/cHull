@@ -69,12 +69,13 @@ sub colourize($)
     my $result = shift;
     my $pass = ($result eq "ok");
 
-    if ($istty) {
+    # Commented out this line because it didn't colour on CUDA01
+    # if ($istty) {
 	my $colour = $pass ? "\e[32;1m" : "\e[31;1m";
 	return "$colour$result\e[0m";
-    } else {
-	return $result;
-    }
+    # } else {
+    # 	return $result;
+    # }
 }
 
 sub mstime($$$)

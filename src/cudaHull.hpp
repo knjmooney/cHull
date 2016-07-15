@@ -16,5 +16,5 @@
 
 #include "geometry.hpp"
 
-std::vector< size_t > cudaHull ( const std::vector< size_t >& );  
+std::vector< size_t > cudaHull ( const CompGeom::Geometry& );  
 

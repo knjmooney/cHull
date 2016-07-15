@@ -6,6 +6,9 @@
  *
  * Description:
  *
+ *
+ * NOTES:
+ *  Graham Scan has a bug when executing the final loop
  ******************************************************/
 
 #include <algorithm>
@@ -80,6 +83,8 @@ vector< size_t > giftWrap(const CompGeom::Geometry &geom) {
   return cHull;
 }
 
+// Graham Scan algorithm
+// The last loop is buggy
 vector< size_t > grahamScan(CompGeom::Geometry &geom) {
   if ( geom.getDim() != 2 ) {    
     errorM("Can only graham scan 2D geometries\n");
@@ -163,8 +168,9 @@ vector< size_t > grahamScan(CompGeom::Geometry &geom) {
     
     CompGeom::Point u ( geom[hnm1] - geom[hnm2] ), v ( geom[h0] - geom[hnm1]);
     float rotation;
-    
+
     rotation = cross2Product ( u,v );
+    cout << u << " " << v << " " << rotation << endl;
     if ( rotation > 0 ) {
       ;;
     }
@@ -177,6 +183,7 @@ vector< size_t > grahamScan(CompGeom::Geometry &geom) {
    
     u = geom[h1] - geom[h0];
     rotation = cross2Product ( v,u );
+    cout << u << " " << v << " " << rotation << endl;
     if ( rotation > 0 ) {
       ;;
     }
@@ -202,44 +209,33 @@ vector< size_t > grahamScan(CompGeom::Geometry &geom) {
 int main() {
   CompGeom::Geometry geom{2};
   
-  geom.addRandom(100);
+  geom.addRandom(20000);
 
-  // timer ( giftWrap(geom) );
-  // timer ( grahamScan(geom) );
+  vector < size_t > hull1;// = cudaHull(geom);
+  vector < size_t > hull2;// = grahamScan(geom);
 
-  
-  // vector < size_t > hull2 = grahamScan(geom);
+  // cout << "giftWrap ";   timer ( giftWrap(geom) );
+  cout << "grahamScan "; timer ( hull1 = grahamScan(geom) );
+  cout << "cudaHull "; timer ( hull2 = cudaHull ( geom ) );
 
-  auto hull2 = giftWrap(geom);
-  geom.print();
-  cout << "\n\n";
-  for ( auto i : hull2 ) {
-    cout << geom[i] << endl;
-  }  
+  // geom.print(); cout << "\n\n";
+  // for ( auto i : hull1 ) cout << geom[i] << endl;
 
 
-  geom.printHull ( "data/test.dat", hull2 );
+  // geom.printHull ( "data/test.dat", hull2 );
 
-  cudaHull ( hull2 );
+  // Check the answers match
+  sort ( hull1.begin(), hull1.end() );
+  sort ( hull2.begin(), hull2.end() ); 
+  unique ( hull1.begin(), hull1.end() );
+  unique ( hull2.begin(), hull2.end() );  
+  // if ( hull1 == hull2 ) cout << "Hulls match\n";
+  // else cout << "Hulls DON'T match\n";
 
   // cout << "\n\n";
-  // for ( auto i : hull ) {
-  //   cout << i << endl;
-  // }
-
-  
-  // CompGeom::Point d({1,0}),v({1, -1});
-
-  // cout << cross2Product ( d,v ) << endl;
-  
-  // cout << innerProduct(v,d) << endl;
-  // cout << norm(d) << endl;
-
-  // cout << cosv2(v,d) << endl;
-
-  // ClockwiseAngle(p1,p2);
-  // cout << -p2 << endl;
-  // cout << p2 << endl;
+  // for ( size_t i=0; i<hull1.size(); i++ ) {
+  //   cout << hull2[i] << " " << hull1[i] << endl;
+  // }  
 
   return EXIT_SUCCESS;
 }

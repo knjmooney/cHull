@@ -26,15 +26,16 @@
 namespace CompGeom {
   
   class Point {
-   
+    
   private:
     std::vector<float> coord;
-
+    
   public:
     explicit Point ( size_t _dim ) : coord { std::vector<float>(_dim,0.0) } {} 
     Point ( std::vector<float> _coord ) : coord{_coord} {} 
     ~Point() {}
-    
+
+    Point ( std::initializer_list<float> _p ) : coord{_p} {}    
     Point operator= ( std::initializer_list<float> _p ) { return coord = _p; }
 
     typedef typename std::vector<float>::iterator iterator;

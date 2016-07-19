@@ -18,12 +18,14 @@
 #include <deque>
 #include <iostream>
 #include <limits>
+#include <list>
 
 #include "convexHull.hpp"
 #include "geometry.hpp"
 #include "errorMessages.hpp"
 #include "pointOperations.hpp"
 #include "cudaHull.hpp"
+#include "triangle.hpp"
 
 using namespace std;
 using namespace std::chrono;
@@ -45,7 +47,7 @@ vector< size_t > giftWrap(const CompGeom::Geometry &geom) {
     errorM("Need more than 2 points to gift wrap\n");
   }
  
-  // Fill a vector of indexes
+  // Fill a vector of indeces
   vector<size_t> idx(geom.size());
   for (size_t i = 0; i != idx.size(); ++i) idx[i] = i;
 
@@ -93,12 +95,13 @@ vector< size_t > grahamScan(CompGeom::Geometry &geom) {
     errorM("Need more than 2 points to do Graham Scan\n");
   }
 
-  // Find average coordinate set it to be the new origin
+  // Find average coordinate, set it to be the new origin
   float avex = 0, avey = 0;
   for ( auto p : geom ) {
     avex += p[0];
     avey += p[1];
   }
+  // // Alternative method using stl
   // std::accumulate ( geom.begin(), geom.end(), avex, 
   // 		    [] (int x, CompGeom::Point y) { return x + y[0]; } );
   // std::accumulate ( geom.begin(), geom.end(), avey, 
@@ -170,7 +173,7 @@ vector< size_t > grahamScan(CompGeom::Geometry &geom) {
     float rotation;
 
     rotation = cross2Product ( u,v );
-    cout << u << " " << v << " " << rotation << endl;
+    // cout << u << " " << v << " " << rotation << endl;
     if ( rotation > 0 ) {
       ;;
     }
@@ -183,7 +186,7 @@ vector< size_t > grahamScan(CompGeom::Geometry &geom) {
    
     u = geom[h1] - geom[h0];
     rotation = cross2Product ( v,u );
-    cout << u << " " << v << " " << rotation << endl;
+    // cout << u << " " << v << " " << rotation << endl;
     if ( rotation > 0 ) {
       ;;
     }
@@ -206,29 +209,72 @@ vector< size_t > grahamScan(CompGeom::Geometry &geom) {
   return vector<size_t>(cHull_index.begin(),cHull_index.end());
 }
 
-int main() {
-  CompGeom::Geometry geom{2};
-  
-  geom.addRandom(20000);
+// Helper function
+// Finds the dot product between the norm of a triangle and 
+// a ray from some point to the com of the triangle
+// If it is negative, the triangle face is visible to the point
+bool isTrinagleVisible ( const CompGeom::Triangle &t, const CompGeom::Point &p) {
+  const CompGeom::Point &n = t.normal();
+  const CompGeom::Point  m = p - t.com();
+  return n[0]*m[0] + n[1]*m[1] + n[2]*m[2] < 0;
+}
 
-  vector < size_t > hull1;// = cudaHull(geom);
-  vector < size_t > hull2;// = grahamScan(geom);
+// As each triangle is oriented with some normal, all edges are entered
+// such that the vertices are ordered anti-clockwise when viewing triangle from 
+// the normal
+vector < vector < size_t > > insertion3D ( const CompGeom::Geometry &geom ) {
+  if ( geom.size() < 4 ) errorM ( "3D hull must have at least 4 points" ); 
+    
+  // Construct initial triangle
+  list < CompGeom::Triangle > T = { { 0, 1, 2, geom } };
+  CompGeom::Triangle & t0 = T.front();
+
+  // Next point can't be visible from initial triangle
+  if ( !t0.isVisible ( geom[3] ) ) t0.invert();
+
+  // Construct hull of first 4 points being careful to enter edges in correct order
+  T.insert( T.end(), { t0[0], t0[2], 3, geom } );
+  T.insert( T.end(), { t0[2], t0[1], 3, geom } );
+  T.insert( T.end(), { t0[1], t0[0], 3, geom } );
+
+  vector < vector < size_t > > result;
+  for ( auto tri : T ) {
+    result.push_back ( {tri[0],tri[1],tri[2]} );
+  }
+  return result;
+} 
+
+
+int main() {
+  CompGeom::Geometry geom{3};
+  
+  geom.addRandom(4);
+
+  vector < vector < size_t > > result = {{0,1,2}};
+
+  result = insertion3D ( geom );
+  for ( auto i : result ) {
+    for ( auto j : i ) cout << j << " ";
+    cout << endl;
+  }
+  // vector < size_t > hull1;// = cudaHull(geom);
+  // vector < size_t > hull2;// = grahamScan(geom);
 
   // cout << "giftWrap ";   timer ( giftWrap(geom) );
-  cout << "grahamScan "; timer ( hull1 = grahamScan(geom) );
-  cout << "cudaHull "; timer ( hull2 = cudaHull ( geom ) );
+  // cout << "grahamScan "; timer ( hull1 = grahamScan(geom) );
+  // cout << "cudaHull "; timer ( hull2 = cudaHull ( geom ) );
 
   // geom.print(); cout << "\n\n";
   // for ( auto i : hull1 ) cout << geom[i] << endl;
 
 
-  // geom.printHull ( "data/test.dat", hull2 );
+  geom.print3DGeom ( "data/test.dat", 2);
 
   // Check the answers match
-  sort ( hull1.begin(), hull1.end() );
-  sort ( hull2.begin(), hull2.end() ); 
-  unique ( hull1.begin(), hull1.end() );
-  unique ( hull2.begin(), hull2.end() );  
+  // sort ( hull1.begin(), hull1.end() );
+  // sort ( hull2.begin(), hull2.end() ); 
+  // unique ( hull1.begin(), hull1.end() );
+  // unique ( hull2.begin(), hull2.end() );  
   // if ( hull1 == hull2 ) cout << "Hulls match\n";
   // else cout << "Hulls DON'T match\n";
 

@@ -2,7 +2,7 @@
  * Name    : geometry.hpp
  * Author  : Kevin Mooney
  * Created : 13/06/16
- * Updated : 15/06/16
+ * Updated : 19/07/16
  *
  * Description:
  *   Vector wrap around class for storing a list of coordinates
@@ -11,7 +11,6 @@
  *   - rethink hardcoded seed, possible have gen as 
  *     member of class
  *   - Make addRandom work for generic box sizes
- *   - Add custom points
  *   - Add points from file
  *   - Add method for checking integrity of geometry 
  *   - Template the dimension of the geometry
@@ -34,9 +33,9 @@
 #include "errorMessages.hpp"
 
 namespace CompGeom {
-
+  
   class Geometry {
-
+    
   private:
     size_t const dim;		// The dimension of the geometry, could be templated
     std::vector<Point> coords;
@@ -44,6 +43,7 @@ namespace CompGeom {
   public:
     Geometry(const size_t &_dim) : dim{_dim} {}
     Geometry(const std::vector<Point> &_coords) : dim{_coords[0].size()}, coords{_coords} {}
+    Geometry(std::initializer_list<Point> P ) : dim{(*P.begin()).size()}, coords{P} {} // ugly
 
     typedef typename std::vector<Point>::iterator iterator;
     typedef typename std::vector<Point>::const_iterator const_iterator;
@@ -59,15 +59,18 @@ namespace CompGeom {
     Point &operator  [](int i)        {return coords[i];}
 
     // Adds N random points, in a box around the origin
-    inline void addRandom(int N);
-    inline void translate(const std::vector<float> &shift);
+    void addRandom(int N);
+    void addPoint (std::initializer_list<float> P);
+    void translate(const std::vector<float> &shift);
 
     // Prints the geometry to stdout
-    inline void print();
+    void print();
 
     // Pretty prints the geometry with some meta data 
     // and the triangles that construct the convex hull
-    inline void printHull(const std::string &file_name, const std::vector<size_t> &cHull);
+    void printHull(const std::string &file_name, const std::vector<size_t> &cHull);
+    void print3DGeom(const std::string &file_name, int steps);
+    void append3DHull(const std::string &file_name, const std::vector < std::vector<size_t> > &cHull);
   };
 
   // normal_dist gives uninitialised warning for old versions of gcc
@@ -87,6 +90,11 @@ namespace CompGeom {
     }
   }
 
+  inline void Geometry::addPoint (std::initializer_list<float> P) { 
+    if ( P.size() != dim ) errorM("Points need to be of same dimension as geometry"); 
+      coords.push_back(P); 
+  }
+  
   // Prints the geometry to screen
   inline void Geometry::print() {
     for ( auto i : coords ) {
@@ -121,6 +129,29 @@ namespace CompGeom {
     file << "\n\nSTART HULL \n";
     for ( size_t i=1; i<cHull.size(); i++ ) file << cHull[i-1]+1 << " " << cHull[i]+1 << " " << 0 <<  "\n";
     file << std::endl;
+  }
+
+  inline void Geometry::print3DGeom(const std::string &file_name, int steps) {
+    std::ofstream file ( file_name );
+    // file = std::cout;
+    file << "META DATA \n";
+    file << "TYPE\t\t" << "3D Convex Hull" << "\n";
+    file << "NP IN GEOM\t\t" << size() << "\n";
+    file << "NO OF STEPS\t\t" << steps << endl;
+    file << "DIMENSION\t\t"  << dim << "\n";
+    // file << "GEN\t\t RANDOM (NORMAL DIST)\n";
+    file << "\n\nSTART COORDINATES \n";
+    for ( auto i : coords ) file << i << std::endl;
+    // file << "\n\nSTART HULL \n";
+    // for ( auto i : cHull) { for ( auto j : i ) file << j << " "; file << std::endl; }
+  }
+
+  inline void Geometry::append3DHull
+  (const std::string &file_name, const std::vector < std::vector<size_t> > &cHull, int step) {
+    std::ofstream file ( file_name , "a");
+    file << "\n\nSTEP " << step << "\n";
+    file << "NO OF TRI\t\t" << cHull.size() << "\n";
+    for ( auto i : cHull) { for ( auto j : i ) file << j << " "; file << std::endl; }
   }
 }
 

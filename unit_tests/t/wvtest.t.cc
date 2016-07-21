@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 
@@ -6,6 +7,7 @@
 #include "../src/geometry.hpp"
 #include "../src/face.hpp"
 #include "../src/triangle.hpp"
+#include "../src/edge.hpp"
 
 #define EPS 0.00001f
 #define WVPASSNEAR(a,b) WVPASS ( fabs(a-b) < fabs(a)*EPS )
@@ -108,3 +110,10 @@ WVTEST_MAIN("Triangle Class") {
   WVPASS ( T[2] == 1 );  
 }
 
+WVTEST_MAIN("Edge Struct") {
+  CompGeom::Edge e0(0,1), e1(1,0), e2(0,2);
+  std::vector <CompGeom::Edge> v = {e0,e1,e2}; 
+  WVPASS ( v.size() == 3 );
+  auto it = std::unique ( v.begin(), v.end() );
+  WVPASS ( std::distance(v.begin(),it ) == 2 ); 
+}

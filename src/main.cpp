@@ -26,9 +26,12 @@
 #include "pointOperations.hpp"
 #include "cudaHull.hpp"
 #include "triangle.hpp"
+#include "edge.hpp"
 
 using namespace std;
 using namespace std::chrono;
+
+string filename = "data/cHull4Vertices.dat";
 
 #define timer(fun) {							\
     steady_clock::time_point t1 = steady_clock::now();			\
@@ -219,6 +222,18 @@ bool isTrinagleVisible ( const CompGeom::Triangle &t, const CompGeom::Point &p) 
   return n[0]*m[0] + n[1]*m[1] + n[2]*m[2] < 0;
 }
 
+// Helper function
+// Removes an element if it's already in the list, otherwise adds it.
+// list is O(n) search which is bad
+void addPotentialEdge ( list<CompGeom::Edge> &arr, size_t id0, size_t id1 ) {
+  CompGeom::Edge E {id0, id1};
+  auto it = find (arr.begin(),arr.end(), E ); 
+  if ( it == arr.end() )
+    arr.insert ( it, E );
+  else
+    arr.erase  ( it );
+}
+
 // As each triangle is oriented with some normal, all edges are entered
 // such that the vertices are ordered anti-clockwise when viewing triangle from 
 // the normal
@@ -230,13 +245,58 @@ vector < vector < size_t > > insertion3D ( const CompGeom::Geometry &geom ) {
   CompGeom::Triangle & t0 = T.front();
 
   // Next point can't be visible from initial triangle
-  if ( !t0.isVisible ( geom[3] ) ) t0.invert();
+  if ( t0.isVisible ( geom[3] ) ) t0.invert();
 
+
+  geom.print3DGeom ( filename, geom.size()-2);
+  {
+    vector < vector < size_t > > result;
+    for ( auto tri : T ) {
+      result.push_back ( {tri[0],tri[1],tri[2]} );
+    }
+    geom.append3DHull( filename, result, 0);
+  }
+  
   // Construct hull of first 4 points being careful to enter edges in correct order
   T.insert( T.end(), { t0[0], t0[2], 3, geom } );
   T.insert( T.end(), { t0[2], t0[1], 3, geom } );
   T.insert( T.end(), { t0[1], t0[0], 3, geom } );
-
+  
+  {
+    vector < vector < size_t > > result;
+    for ( auto tri : T ) {
+      result.push_back ( {tri[0],tri[1],tri[2]} );
+    }
+    geom.append3DHull( filename, result, 1);
+  }
+  
+  
+  for ( size_t i=4; i<geom.size(); i++ ) {
+    list < CompGeom::Edge > potential_edges;
+    for ( auto it = T.begin(); it!=T.end(); it++ ) {
+      auto &tri = *it;
+      if ( tri.isVisible( geom[i] ) ) { 
+	// cout << tri[0] << " " << tri[1] << " " << tri[2] << "\tnorm:" << tri.normal() <<  endl;
+	addPotentialEdge ( potential_edges, tri[0], tri[1] );
+	addPotentialEdge ( potential_edges, tri[1], tri[2] );
+	addPotentialEdge ( potential_edges, tri[2], tri[0] );
+	T.erase (it++); it--;
+      }
+    }
+    for ( auto edge : potential_edges ) {
+      T.insert ( T.end(), {i,edge.first, edge.second,geom} );
+      // cout << edge.first << " " << edge.second << "\n";
+    }
+    // cout << "\n\n";
+    {				// Debugging
+      vector < vector < size_t > > result;
+      for ( auto tri : T ) {
+	result.push_back ( {tri[0],tri[1],tri[2]} );
+      }
+      geom.append3DHull( filename, result, i-2);
+    }
+  }
+  
   vector < vector < size_t > > result;
   for ( auto tri : T ) {
     result.push_back ( {tri[0],tri[1],tri[2]} );
@@ -246,17 +306,16 @@ vector < vector < size_t > > insertion3D ( const CompGeom::Geometry &geom ) {
 
 
 int main() {
+  // CompGeom::Geometry geom = {{0,0,0}, {1,0,0}, {0,1,0}, {0,0,1}, {1,1,1},{0.5,0.5,0.5},{2,2,2}};
   CompGeom::Geometry geom{3};
+
+  geom.addRandom(20000);
+
+  vector < vector < size_t > > result;
+  timer ( insertion3D(geom) );
   
-  geom.addRandom(4);
+  
 
-  vector < vector < size_t > > result = {{0,1,2}};
-
-  result = insertion3D ( geom );
-  for ( auto i : result ) {
-    for ( auto j : i ) cout << j << " ";
-    cout << endl;
-  }
   // vector < size_t > hull1;// = cudaHull(geom);
   // vector < size_t > hull2;// = grahamScan(geom);
 
@@ -267,8 +326,6 @@ int main() {
   // geom.print(); cout << "\n\n";
   // for ( auto i : hull1 ) cout << geom[i] << endl;
 
-
-  geom.print3DGeom ( "data/test.dat", 2);
 
   // Check the answers match
   // sort ( hull1.begin(), hull1.end() );

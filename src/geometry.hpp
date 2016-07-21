@@ -68,9 +68,9 @@ namespace CompGeom {
 
     // Pretty prints the geometry with some meta data 
     // and the triangles that construct the convex hull
-    void printHull(const std::string &file_name, const std::vector<size_t> &cHull);
-    void print3DGeom(const std::string &file_name, int steps);
-    void append3DHull(const std::string &file_name, const std::vector < std::vector<size_t> > &cHull);
+    void printHull(const std::string &file_name, const std::vector<size_t> &cHull) const;
+    void print3DGeom(const std::string &file_name, int steps) const;
+    void append3DHull(const std::string &file_name, const std::vector < std::vector<size_t> > &cHull, int step) const;
   };
 
   // normal_dist gives uninitialised warning for old versions of gcc
@@ -115,7 +115,7 @@ namespace CompGeom {
   }
 
   // Very messy, specialised for printing 2D geometries to be modelled in 3D
-  inline void Geometry::printHull(const std::string &file_name, const std::vector<size_t> &cHull) {
+  inline void Geometry::printHull(const std::string &file_name, const std::vector<size_t> &cHull) const {
     std::ofstream file ( file_name );
     file << "META DATA \n";
     file << "TYPE\t\t" << "Convex Hull" << "\n";
@@ -131,26 +131,29 @@ namespace CompGeom {
     file << std::endl;
   }
 
-  inline void Geometry::print3DGeom(const std::string &file_name, int steps) {
+  inline void Geometry::print3DGeom(const std::string &file_name, int steps) const {
     std::ofstream file ( file_name );
     // file = std::cout;
     file << "META DATA \n";
-    file << "TYPE\t\t" << "3D Convex Hull" << "\n";
-    file << "NP IN GEOM\t\t" << size() << "\n";
-    file << "NO OF STEPS\t\t" << steps << endl;
-    file << "DIMENSION\t\t"  << dim << "\n";
+    file << "TYPE " << "Convex Hull" << "\n";
+    file << "Number of Points " << size() << "\n";
+    file << "Number of Timesteps " << steps << "\n";
+    // file << "DIMENSION\t\t"  << dim << "\n";
     // file << "GEN\t\t RANDOM (NORMAL DIST)\n";
-    file << "\n\nSTART COORDINATES \n";
-    for ( auto i : coords ) file << i << std::endl;
+    // file << "\n\nSTART COORDINATES \n";
+    int c=0;
+    file << "\n";
+    for ( auto i : coords ) file << "POINT " << c++ << " " << i << std::endl;
     // file << "\n\nSTART HULL \n";
     // for ( auto i : cHull) { for ( auto j : i ) file << j << " "; file << std::endl; }
   }
 
   inline void Geometry::append3DHull
-  (const std::string &file_name, const std::vector < std::vector<size_t> > &cHull, int step) {
-    std::ofstream file ( file_name , "a");
-    file << "\n\nSTEP " << step << "\n";
-    file << "NO OF TRI\t\t" << cHull.size() << "\n";
+  (const std::string &file_name, const std::vector < std::vector<size_t> > &cHull, int step) const {
+    std::ofstream file ( file_name , std::ofstream::app);
+    file << "\n\nTimestep " << step << "\n";
+    file << "Number of Triangles " << cHull.size() << "\n";
+    file << "START HULL\n";
     for ( auto i : cHull) { for ( auto j : i ) file << j << " "; file << std::endl; }
   }
 }

@@ -3,7 +3,7 @@ CXX    = g++
 NVCC   = nvcc
 LINKER = nvcc
 
-CFLAGS    = -O2 #-fdiagnostics-color=auto #-finline-functions -ffast-math -funroll-loops 
+CFLAGS    = -pg -O2 #-fdiagnostics-color=auto #-finline-functions -ffast-math -funroll-loops 
 CXXFLAGS  = -pedantic -W -Wall -Wextra --std=c++11 $(CFLAGS)
 NVCCFLAGS = --use_fast_math --std=c++11 
 
@@ -18,7 +18,7 @@ EXEC      = $(BIN)/convexHull
 all: $(EXEC)
 
 $(EXEC): $(TARGET)
-	$(LINKER) -o ${EXEC} ${TARGET} 	
+	$(LINKER) -pg -o ${EXEC} ${TARGET} 	
 
 $(BIN)/%.o: $(SRC)/%.cu makefile
 	$(NVCC) $(NVCCFLAGS) -c $(INCPATH) $< -o $@

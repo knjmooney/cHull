@@ -31,8 +31,9 @@
 using namespace std;
 using namespace std::chrono;
 
-string filename = "data/cHull4Vertices.dat";
+const string filename = "data/cHull4Vertices.dat";
 
+// Macro for timing function calls
 #define timer(fun) {							\
     steady_clock::time_point t1 = steady_clock::now();			\
     (fun);								\
@@ -41,7 +42,7 @@ string filename = "data/cHull4Vertices.dat";
     cout << time_span.count() << endl;					\
   }
 
-// Gift wrap algorithm, this is much messier than I expected
+// Gift wrap algorithm
 vector< size_t > giftWrap(const CompGeom::Geometry &geom) {
   if ( geom.getDim() != 2 ) {    
     errorM("Can only gift wrap 2D geometries\n");
@@ -161,6 +162,7 @@ vector< size_t > grahamScan(CompGeom::Geometry &geom) {
   cHull_index.push_back(h2);
 
   // Fix the start and end
+  // This doesn't work as expected!!!
   bool imperfect_convex_hull = true;
   int N = cHull_index.size();
   int hnm2,hnm1, h0;
@@ -186,8 +188,8 @@ vector< size_t > grahamScan(CompGeom::Geometry &geom) {
       N--;
     }
 
-   
     u = geom[h1] - geom[h0];
+    v = geom[h0] - geom[cHull_index[N-1]]; // Possible solution to bug
     rotation = cross2Product ( v,u );
     // cout << u << " " << v << " " << rotation << endl;
     if ( rotation > 0 ) {
@@ -247,9 +249,9 @@ vector < vector < size_t > > insertion3D ( const CompGeom::Geometry &geom ) {
   // Next point can't be visible from initial triangle
   if ( t0.isVisible ( geom[3] ) ) t0.invert();
 
-
+  // Debugging
   geom.print3DGeom ( filename, geom.size()-2);
-  {
+  {				// Debugging
     vector < vector < size_t > > result;
     for ( auto tri : T ) {
       result.push_back ( {tri[0],tri[1],tri[2]} );
@@ -262,7 +264,7 @@ vector < vector < size_t > > insertion3D ( const CompGeom::Geometry &geom ) {
   T.insert( T.end(), { t0[2], t0[1], 3, geom } );
   T.insert( T.end(), { t0[1], t0[0], 3, geom } );
   
-  {
+  { // Debugging
     vector < vector < size_t > > result;
     for ( auto tri : T ) {
       result.push_back ( {tri[0],tri[1],tri[2]} );
@@ -276,7 +278,6 @@ vector < vector < size_t > > insertion3D ( const CompGeom::Geometry &geom ) {
     for ( auto it = T.begin(); it!=T.end(); it++ ) {
       auto &tri = *it;
       if ( tri.isVisible( geom[i] ) ) { 
-	// cout << tri[0] << " " << tri[1] << " " << tri[2] << "\tnorm:" << tri.normal() <<  endl;
 	addPotentialEdge ( potential_edges, tri[0], tri[1] );
 	addPotentialEdge ( potential_edges, tri[1], tri[2] );
 	addPotentialEdge ( potential_edges, tri[2], tri[0] );
@@ -285,10 +286,9 @@ vector < vector < size_t > > insertion3D ( const CompGeom::Geometry &geom ) {
     }
     for ( auto edge : potential_edges ) {
       T.insert ( T.end(), {i,edge.first, edge.second,geom} );
-      // cout << edge.first << " " << edge.second << "\n";
     }
-    // cout << "\n\n";
-    {				// Debugging
+    // Debugging
+    {			      
       vector < vector < size_t > > result;
       for ( auto tri : T ) {
 	result.push_back ( {tri[0],tri[1],tri[2]} );

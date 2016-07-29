@@ -8,9 +8,16 @@
 #include "../src/face.hpp"
 #include "../src/triangle.hpp"
 #include "../src/edge.hpp"
+#include "../src/convexHull2D.hpp"
+#include "../src/convexHull3D.hpp"
+#include "../src/tile.hpp"
+#include "../src/boundingBox.hpp"
 
 #define EPS 0.00001f
 #define WVPASSNEAR(a,b) WVPASS ( fabs(a-b) < fabs(a)*EPS )
+
+using std::cout;
+using std::endl;
 
 WVTEST_MAIN("wvtest tests")
 {
@@ -117,3 +124,85 @@ WVTEST_MAIN("Edge Struct") {
   auto it = std::unique ( v.begin(), v.end() );
   WVPASS ( std::distance(v.begin(),it ) == 2 ); 
 }
+
+WVTEST_MAIN("Gift Wrap") {
+  CompGeom::Geometry geom { {0,0}, {0,-1}, {1,0}, {-1,0}, {0,1} };
+  std::vector < size_t > result = giftWrap(geom);
+  result.pop_back(); 		// remove repeated index
+  std::sort(result.begin(),result.end());
+  WVPASS ( result == std::vector<size_t> ( { 1,2,3,4} ) );
+}
+
+WVTEST_MAIN("Graham Scan") {
+  CompGeom::Geometry geom { {0,0}, {0,-1}, {1,0}, {-1,0}, {0,1} };
+  std::vector < size_t > result = grahamScan(geom);
+  result.pop_back(); 		// remove repeated index
+  std::sort(result.begin(),result.end());
+  WVPASS ( result == std::vector<size_t> ( { 1,2,3,4} ) );
+}
+
+
+
+
+WVTEST_MAIN("Compare 2D algorithms") {
+  CompGeom::Geometry geom{2};
+  geom.addRandom(100000);
+
+  std::vector < size_t > result1 = giftWrap  (geom);
+  std::vector < size_t > result2 = grahamScan(geom);
+
+  result1.pop_back(); 		// remove repeated index
+  std::sort(result1.begin(),result1.end());
+  result2.pop_back(); 		// remove repeated index
+  std::sort(result2.begin(),result2.end());
+
+  WVPASS ( result1 == result2 );
+}
+
+
+WVTEST_MAIN("3D Insertion Method") {
+  CompGeom::Geometry geom { {0,0,0}, {0,-1,0}, {1,0,0}, {0,0,1}, {-1,0,0},
+                            {0,1,0}, {0,0,-1} };
+  auto tris = insertion3D(geom);
+  std::vector<size_t> result;
+  for ( auto&& t : tris ) {
+    result.push_back(t[0]);
+    result.push_back(t[1]);
+    result.push_back(t[2]);
+  }
+
+  std::sort(result.begin(),result.end());
+  auto it = std::unique(result.begin(),result.end());
+  result.resize(std::distance(result.begin(),it));
+  WVPASS ( result == std::vector<size_t> ( { 1,2,3,4,5,6 } ) );
+}
+
+WVTEST_MAIN("Tile") {
+  CompGeom::Tile T( 32, 32 );
+
+  T.set(0,0,1.1);
+  WVPASSNEAR(T.get(0,0),1.1);
+
+  bool failure = false;
+  try {
+    T.set(33,1,0.9);
+  } catch ( std::out_of_range ) {
+    failure = true;
+  }
+  WVPASS ( failure );
+
+  T.set ( 31,31,0.9 );
+  WVPASSNEAR ( T.get(31,31), 0.9 );
+}
+
+WVTEST_MAIN("Bounding Box") {
+
+  CompGeom::BoundingBox B(32,32);
+  
+  CompGeom::Tile *T = B.up();
+
+  T->set(1,1,0.2);
+
+  WVPASSNEAR(T->get(1,1), 0.2 );
+}
+ 

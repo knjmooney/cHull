@@ -21,3 +21,15 @@ inline void printError(const char *str,const char *file, int line ) {
   throw std::logic_error ( oss.str() );
 }
 
+// Macro to be wrapped around Cuda Calls to handle errors correctly
+#ifdef __CUDACC__		// if compiling cuda
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line )
+{
+  if (code != cudaSuccess) {
+    std::ostringstream oss;
+    oss << cudaGetErrorString(code) << " " <<  file << " " <<  line;
+    throw std::logic_error ( oss.str() );
+  }
+}
+#endif

@@ -3,7 +3,7 @@ CXX    = g++
 NVCC   = nvcc
 LINKER = nvcc
 
-CFLAGS    = -pg -O2 #-fdiagnostics-color=auto #-finline-functions -ffast-math -funroll-loops 
+CFLAGS    = -pg -O2 #-finline-functions -ffast-math -funroll-loops 
 CXXFLAGS  = -pedantic -W -Wall -Wextra --std=c++11 $(CFLAGS)
 NVCCFLAGS = --use_fast_math --std=c++11 
 
@@ -11,7 +11,7 @@ SRC       = ./src
 BIN       = ./bin
 INCPATH   = -I$(SRC)
 
-TARGET    = $(BIN)/main.o $(BIN)/cudaHull.o
+TARGET    = $(BIN)/main.o $(BIN)/cudaHull.o $(BIN)/convexHull2D.o $(BIN)/convexHull3D.o
 EXEC      = $(BIN)/convexHull
 
 

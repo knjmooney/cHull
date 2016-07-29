@@ -1,18 +1,22 @@
 /******************************************************
  * Name    : point_operations.hpp
  * Author  : Kevin Mooney
- * Created : 20/06/16
+ * Created : 25/07/16
  * Updated : 
  *
  * Description:
  *
- * ToDo:
+ * Notes:
+ *   T needs [] overloaded and routine size()
  ******************************************************/
 
 #pragma once
 
+#include "geometry.hpp"
+#include "point.hpp"
+
 // This is a std algorithm...
-CompGeom::Geometry::const_iterator findMinX(const CompGeom::Geometry &geom) {
+inline CompGeom::Geometry::const_iterator findMinX(const CompGeom::Geometry &geom) {
   auto it     = geom.begin();
   auto it_min = it;
   it++;
@@ -22,7 +26,7 @@ CompGeom::Geometry::const_iterator findMinX(const CompGeom::Geometry &geom) {
   return it_min;
 }
 
-// Caluclates the 2 norm of a vector
+// Caluclates the dot product of 2 vectors
 template < typename T >
 inline float innerProduct ( const T &x, const T &y ) {
   //  if ( x.size() != y.size() )
@@ -45,8 +49,7 @@ inline float norm ( const T &x ) {
   return sqrt ( innerProduct ( x, x ) );
 }
 
-// T needs [] overloaded and routines length() and size()
-// Should get rid of length() dependence
+// Calculates the inner angle between two 2-vectors
 template < typename T >
 float innerAngle ( const T &x, const T &y ) {
   if ( x.size() != 2 && y.size() != 2 ) {
@@ -56,7 +59,7 @@ float innerAngle ( const T &x, const T &y ) {
   return acos(cosv2(x,y));
 }
 
-
+// Caluclates the angle between x and y in a clockwise direction
 template < typename T >
 float antiClockwiseAngle ( const T &x, const T &y ) {
   if ( x.size() != 2 || y.size() != 2 ) {

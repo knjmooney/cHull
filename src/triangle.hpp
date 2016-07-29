@@ -26,9 +26,10 @@ namespace CompGeom {
     std::vector<size_t> _vertices;
     Point _norm;
     Point _com;
-    // int _d;			// This could be calculated from com
 
   public:
+    // The norm and centre of mass are calculated on construction 
+    // and then all points are discarded except for their IDS
     Triangle ( size_t id0, size_t id1, size_t id2, const Geometry &geom) : 
       _vertices{{id0,id1,id2}}, _norm{3}, _com{3} { 
 
@@ -46,11 +47,11 @@ namespace CompGeom {
     size_t operator   [](int i) const  {return _vertices[i];}
 
     // Points are stored in anti-clockwise order when viewing from the norm
-    Point normal () const {
+    inline Point normal () const {
       return _norm;
     }
     
-    Point com () const {
+    inline Point com () const {
       return _com;
     }
 

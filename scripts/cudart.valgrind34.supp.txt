@@ -1,0 +1,69 @@
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:calloc
+   fun:monstartup
+   fun:__gmon_start__
+   obj:/usr/lib/libGLcore.so.177.82
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   ...
+   obj:/usr/lib/libcuda.so.177.82
+   fun:_dl_runtime_resolve
+   obj:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:/usr/lib/libcuda.so.177.82
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:strdup
+   ...
+   obj:/usr/lib/libcuda.so.177.82
+   ...
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.2.5
+   obj:/usr/local/cuda/lib/libcudart.so.2.0
+   ...
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:calloc
+   ...
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.2.5
+   obj:/usr/lib/libGL.so.177.82
+   ...
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:calloc
+   ...
+   fun:dlopen@@GLIBC_2.2.5
+   obj:/usr/local/cuda/lib/libcudart.so.2.0
+   ...
+}
+
+

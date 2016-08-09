@@ -3,24 +3,28 @@ CXX    = g++
 NVCC   = nvcc
 LINKER = nvcc
 
-CFLAGS    = -pg -O2 #-finline-functions -ffast-math -funroll-loops 
+CFLAGS    = #-O2 -finline-functions -ffast-math -funroll-loops 
 CXXFLAGS  = -pedantic -W -Wall -Wextra --std=c++11 $(CFLAGS)
-NVCCFLAGS = --use_fast_math --std=c++11 
+NVCCFLAGS = -g -G --use_fast_math --std=c++11 $(CFLAGS)
 
+LIB       = ./lib
 SRC       = ./src
 BIN       = ./bin
-INCPATH   = -I$(SRC)
+INCPATH   = -I$(SRC) -I$(LIB)
 
-TARGET    = $(BIN)/main.o $(BIN)/cudaHull.o $(BIN)/convexHull2D.o $(BIN)/convexHull3D.o
+TARGET    = $(BIN)/main.o $(BIN)/cudaHull.o $(BIN)/convexHull2D.o $(BIN)/convexHull3D.o $(BIN)/pba2DHost.o
 EXEC      = $(BIN)/convexHull
 
 
 all: $(EXEC)
 
 $(EXEC): $(TARGET)
-	$(LINKER) -pg -o ${EXEC} ${TARGET} 	
+	$(LINKER) -g -o ${EXEC} ${TARGET} 	
 
 $(BIN)/%.o: $(SRC)/%.cu makefile
+	$(NVCC) $(NVCCFLAGS) -c $(INCPATH) $< -o $@
+
+$(BIN)/%.o: $(LIB)/%.cu makefile
 	$(NVCC) $(NVCCFLAGS) -c $(INCPATH) $< -o $@
 
 $(BIN)/%.o: $(SRC)/%.cpp makefile
@@ -32,7 +36,7 @@ plot: $(EXEC)
 	rm temp.dat
 
 test: $(EXEC)
-	$(EXEC)
+	$(EXEC) $(TEST_ARGS)
 
 unit-tests: $(EXEC)
 	make -C unit_tests test

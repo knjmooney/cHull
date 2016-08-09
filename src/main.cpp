@@ -77,23 +77,22 @@ int main(int argc, char *argv[]) {
       algorithms = optarg;
       break;
     case 'd':
-      dim = atoi(optarg);
+      dim        = atoi(optarg);
       break;
     case 'h':
       printUsage();
       return EXIT_SUCCESS;
       break;
     case 'f':
-      filename = optarg;
+      filename   = optarg;
       break;
     case 'n':
-      n_points = atol(optarg);
+      n_points   = atol(optarg);
       break;
     case 't':
       time_func_calls = 1;
       break;
     default:
-      fprintf(stderr, "Invalid option given\n");
       printUsage();
       return EXIT_FAILURE;
     }
@@ -123,15 +122,25 @@ int main(int argc, char *argv[]) {
     }
 
     if ( token == "gHullSerial" ) {
+      if ( time_func_calls ) {
 	timer ( gHullSerial(geom) );
+      }
+      else 
+	gHullSerial(geom);
     }    
 
     if ( token == "giftWrap" ) {
+      if ( time_func_calls ) {
 	timer ( giftWrap(geom) );
+      }
+      else giftWrap(geom) ;
     }    
 
     if ( token == "grahamScan" ) {
+      if ( time_func_calls ) {
 	timer ( grahamScan(geom) );
+      }
+      else grahamScan ( geom );
     }    
   }
 

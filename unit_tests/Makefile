@@ -1,10 +1,13 @@
+CC  = nvcc
 
-OBJ = ../bin/convexHull2D.o ../bin/convexHull3D.o
+BIN     = ../bin
+OBJ     = $(BIN)/convexHull2D.o $(BIN)/convexHull3D.o $(BIN)/cudaHull.o $(BIN)/pba2DHost.o
+INC     = -I. -I../lib/ 
 
 all: t/wvtest
 
 t/wvtest: wvtestmain.cc wvtest.cc t/wvtest.t.cc $(OBJ)
-	g++ -std=c++11 -D WVTEST_CONFIGURED -o $@ -I. $^
+	$(CC) -std=c++11 -D WVTEST_CONFIGURED -o $@ $(INC) $^
 
 runtests: all
 	t/wvtest

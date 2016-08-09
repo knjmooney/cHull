@@ -1,13 +1,15 @@
 /******************************************************
- * Name    : convexHull2D.hpp
+ * Name    : convexHull2D.cpp
  * Author  : Kevin Mooney
  * Created : 25/07/16
- * Updated : 
+ * Updated : 03/08/16
  *
  * Description:
  *
  * NOTES:
- *  Fixed Graham Scan Bug 25/7/16
+ *  - Graham Scan last loop doesn't work as expected
+ *    for large data sets, most likley a problem with
+ *    the logic
  ******************************************************/
 
 #include <deque>

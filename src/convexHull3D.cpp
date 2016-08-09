@@ -2,7 +2,7 @@
  * Name    : convexHull3D.cpp
  * Author  : Kevin Mooney
  * Created : 25/07/16
- * Updated : 27/07/16
+ * Updated : 02/08/16
  *
  * Description:
  *
@@ -19,8 +19,23 @@
 #include "triangle.hpp"
 #include "edge.hpp"
 #include "boundingBox.hpp"
+#include "pba2D.h"		// Parallel Banding Algorithm
+
+#define EPS 1e-15		// Epsilon
+
+// pba parameters, choice of parameters discussed in pba paper
+// These are important, they determine the blocksizes
+#define P1B 16			// Phase 1 band
+#define P2B 16			// Phase 2 band
+#define P3B 16			// Phase 3 band
+
+#define BOXSIZE 512
 
 using namespace std;
+
+//////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////  INSERTION 3D  /////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 
 // Helper function
 // Finds the dot product between the norm of a triangle and 
@@ -87,6 +102,9 @@ vector < vector < size_t > > insertion3D ( const CompGeom::Geometry &geom ) {
   return result;
 } 
 
+//////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////  DEBUG VERSION  ////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 
 // As each triangle is oriented with some normal, all edges are entered
 // such that the vertices are ordered anti-clockwise when viewing triangle from 
@@ -157,7 +175,9 @@ vector < vector < size_t > > insertion3D ( const CompGeom::Geometry &geom, const
   return result;
 } 
 
-////////////////////////////////// GHULL SERIAL //////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////  GHULL SERIAL  /////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 
 // Helper Function
 // Finds the minimum and maximum coordinates in all dimensions
@@ -176,6 +196,9 @@ void findExtremes ( const CompGeom::Geometry &geom, float min[3], float max[3] )
   }  
 }
 
+// Step 1
+// Wrap the set of points in a box and project the points onto bricks on the faces
+// deciding conflicts by choosing the closer point
 void projectToTile ( CompGeom::BoundingBox &B, const CompGeom::Geometry &geom ) {
   CompGeom::Tile *Tmax[] = { B.right(), B.front(), B.up()   };
   CompGeom::Tile *Tmin[] = { B.left() , B.back() , B.down() };
@@ -183,50 +206,175 @@ void projectToTile ( CompGeom::BoundingBox &B, const CompGeom::Geometry &geom ) 
   float min[3],max[3];
   findExtremes ( geom, min, max );
 
+  // DEBUG
+  // printf("max: %f %f %f\n",max[0],max[1],max[2] );
+  // printf("min: %f %f %f\n",min[0],min[1],min[2] );
+
   // All tiles should have same width and height
   // i.e. box should be a cube
   int w = Tmin[0]->width();
   int h = Tmin[0]->height();
 
   for ( size_t i=0; i<3; i++ ) {
-    // If i is the x-axis, j and k and y and z-axis accordingly
+    // If i is the x-axis, j and k are y and z-axis accordingly
     // and then cyclic permutations of these
     int j = (i+1)%3;
     int k = (i+2)%3;
     for ( auto p : geom ) {
-      // Find out the indexs of the brick of the tile the 
+      // Find out the indexes of the brick on the tile the 
       // points are projected onto
-      int idj = int(w*(p[j]-min[j])/(max[j]-min[j]));
-      int idk = int(h*(p[k]-min[k])/(max[k]-min[k]));
+      // Add small correction to denominator to keep values
+      // inside [0,w)
+      int idj = int(w*(p[j]-min[j])/((max[j]-min[j])*(1+EPS)));
+      int idk = int(h*(p[k]-min[k])/((max[k]-min[k])*(1+EPS)));
 	
-      // The current value on the brick
+      // Check is the current value on the brick
+      // is less than value set
       float cmin_val = Tmin[i]->get(idj,idk);
       float cmax_val = Tmax[i]->get(idj,idk);
-      if ( cmin_val > p[i] ) {
-	Tmin[i]->set (idj,idk, p[i] );
+      float this_min = fabs(p[i]-min[i]);
+      float this_max = fabs(p[i]-max[i]);
+      // DEBUG
+      // printf("idj:%d idk:%d cmin:%3e cmax:%3e this_min:%f this_max:%f p(%f,%f,%f)\n",
+      // 	     idj, idk, cmin_val, cmax_val, this_min, this_max, p[0],p[1],p[2] );
+      if ( cmin_val > this_min ) {
+	Tmin[i]->set (idj,idk, this_min );
       }
-      if ( cmax_val < p[i] ) {
-	Tmax[i]->set (idj,idk, p[i] );
+      if ( cmax_val > this_max ) {
+	Tmax[i]->set (idj,idk, this_max );
       }
+      // DEBUG
+      // cmin_val = Tmin[i]->get(idj,idk);
+      // cmax_val = Tmax[i]->get(idj,idk);
+      // printf("idj:%d idk:%d cmin:%3e cmax:%3e this_min:%f this_max:%f p(%f,%f,%f)\n\n",
+      // 	     idj, idk, cmin_val, cmax_val, this_min, this_max, p[0],p[1],p[2] );
     }
   }
+  // for ( int i=0; i<3; i++ ) {
+  //   Tmax[i]->print();
+  //   printf ("\n\n");
+  // }
+  // Tmax[0]->print();
+  //   printf ("\n\n");
+  // Tmin[0]->print();
+
+}
+
+size_t shortID ( int i, int j , int w) {
+  return 2*(i*w + j);
+}
+
+void constructVoronois ( CompGeom::BoundingBox & B, const CompGeom::Geometry & geom) {
+  size_t w = B.width();
+  size_t h = B.height();
+  
+  // Initialise the input and output arrays 
+  // with the marker value defined in the pba
+  // header file
+  short * input  = new short[2*w*h];
+  short * output[6];
+  for ( size_t i=0; i<6; i++ ) {
+    output[i] = new short[2*w*h];
+    // std::fill ( output[i], output[i] + 2*w*h, MARKER );
+  }
+
+  CompGeom::Tile *Tmax[] = { B.right(), B.front(), B.up()   };
+  CompGeom::Tile *Tmin[] = { B.left() , B.back() , B.down() };
+
+  // This method has been called previously 
+  // when projecting onto the planes
+  // O(N)
+  float min[3],max[3];
+  findExtremes ( geom, min, max );
+
+  // Allocates memory for the pba library
+  // I'm unsure what the parameter is that we are passing
+  // But in the example main, this is what is passed for
+  // an input array of size 2*w*w as we have here.
+  pba2DInitialization(w);
+
+  for ( int i=0; i<3; i++ ) {
+    int j = (i+1)%3;
+    int k = (i+2)%3;
+
+    // Calculate Voronoi diagram on bottom face
+    std::fill ( input, input + 2*w*h, MARKER );
+    for ( auto p : geom ) {
+      int idj = int(w*(p[j]-min[j])/((max[j]-min[j])*(1+EPS)));
+      int idk = int(h*(p[k]-min[k])/((max[k]-min[k])*(1+EPS)));
+      int index = shortID(idj,idk,w);
+
+      if ( Tmin[i]->get(idj,idk) == fabs(p[i]-min[i]) ) {
+	input[index]   = idk;
+	input[index+1] = idj;
+      }
+    }
+    pba2DVoronoiDiagram(input,output[2*i],P1B,P2B,P3B);
+
+    std::fill ( input, input + 2*w*h, MARKER );
+    for ( auto p : geom ) {
+      int idj = int(w*(p[j]-min[j])/((max[j]-min[j])*(1+EPS)));
+      int idk = int(h*(p[k]-min[k])/((max[k]-min[k])*(1+EPS)));
+      int index = shortID(idj,idk,w);
+
+
+      if ( Tmax[i]->get(idj,idk) < 100 ) 
+	cout << Tmax[i]->get(idj,idk) << " " <<  fabs(p[i]-max[i]) 
+	     << " " << index << " " << idj << " " << idk << endl;
+      
+      if ( Tmax[i]->get(idj,idk) == fabs(p[i]-max[i]) ) {
+	input[index]   = idk;
+	input[index+1] = idj;
+      }
+    }
+
+
+    pba2DVoronoiDiagram(input,output[2*i+1],P1B,P2B,P3B);
+
+    for ( size_t l=0; l<h; l++ ) {
+      for ( size_t j=0; j<w; j++ ) {
+	int index = shortID(l,j,w);
+	if ( input[index] == MARKER ) cout << "- "; 
+	else cout << "(" << input[index] << "," << input[index+1] << ") ";
+      }
+      cout << endl;
+    }
+    cout << endl << endl;;
+
+    for ( size_t l=0; l<h; l++ ) {
+      for ( size_t j=0; j<w; j++ ) {
+	int index = shortID(l,j,w);
+	if ( output[2*i+1][index] == MARKER ) cout << "- "; 
+	else cout << "(" << output[2*i+1][index] << "," << output[2*i+1][index+1] << ") ";
+      }
+      cout << endl;
+    }
+
+    cout << endl << endl;
+  }
+
+
+  // Free all memory
+  pba2DDeinitialization();
+  delete[] input;
+  for (int i=0; i<6; i++ ) delete[] output[i];
 }
 
 vector < vector < size_t > > gHullSerial ( const CompGeom::Geometry &geom ) {
   if ( geom.size() < 4 ) errorM("3D geometry needs at least for non-coplanar points to be a convex hull"); 
   if ( geom.getDim() != 3 ) errorM("gHullSerial only works in 3 dimensions");
 
-  int w = 32, h = 32;
+  size_t w, h;
+  w = h = BOXSIZE;
 
   CompGeom::BoundingBox B ( w,h );
   
   projectToTile(B,geom);
-  
-  for ( auto i : geom ) cout << i << endl;
+  constructVoronois ( B,geom );
 
-  return vector < vector < size_t > > ( 1 );
+
+  // for ( auto i : geom ) cout << i << endl;
+
+  return vector < vector < size_t > > ( 1,{0,1,2} );
 }
-
-
-
 

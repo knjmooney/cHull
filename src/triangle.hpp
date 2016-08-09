@@ -51,6 +51,7 @@ namespace CompGeom {
       return _norm;
     }
     
+    // Return centre of mass
     inline Point com () const {
       return _com;
     }
@@ -61,14 +62,6 @@ namespace CompGeom {
       const Point &v = _com;
       return n[0]*(p[0] - v[0]) + n[1]*(p[1] - v[1]) + n[2]*(p[2] - v[2]) > 0;
     }
-
-    // // If norms are pointing in opposite directions
-    // bool isVisible ( Triangle T ) {
-    //   Point &n = _norm;
-    //   Point &m = T.normal();
-    //   return n[0]*m[0] + n[1]*m[1] + n[2]*m[2] < 0;
-    // }
-
 
     void invert () {
       std::swap ( _vertices[1], _vertices[2] );

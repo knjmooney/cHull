@@ -14,10 +14,14 @@
 #include "../src/boundingBox.hpp"
 
 #define EPS 0.00001f
-#define WVPASSNEAR(a,b) WVPASS ( fabs(a-b) < fabs(a)*EPS )
+#define WVPASSNEAR(a,b) WVPASS ( fabs(a-b) < fabs(a)*EPS + EPS )
 
 using std::cout;
 using std::endl;
+
+// Prototype helper functions for testing
+void projectToTile ( CompGeom::BoundingBox &B, const CompGeom::Geometry &geom );
+
 
 WVTEST_MAIN("wvtest tests")
 {
@@ -141,12 +145,10 @@ WVTEST_MAIN("Graham Scan") {
   WVPASS ( result == std::vector<size_t> ( { 1,2,3,4} ) );
 }
 
-
-
-
+// NEED TO REVISIT!!!
 WVTEST_MAIN("Compare 2D algorithms") {
   CompGeom::Geometry geom{2};
-  geom.addRandom(100000);
+  geom.addRandom(100000);	// This fails for >200,000
 
   std::vector < size_t > result1 = giftWrap  (geom);
   std::vector < size_t > result2 = grahamScan(geom);
@@ -182,6 +184,9 @@ WVTEST_MAIN("Tile") {
 
   T.set(0,0,1.1);
   WVPASSNEAR(T.get(0,0),1.1);
+  WVPASS ( T.width() == 32 );
+  WVPASS ( T.height() == 32 );
+  
 
   bool failure = false;
   try {
@@ -193,16 +198,42 @@ WVTEST_MAIN("Tile") {
 
   T.set ( 31,31,0.9 );
   WVPASSNEAR ( T.get(31,31), 0.9 );
+
+  CompGeom::Tile T_off( 32, 10 );
+  T_off.set ( 31,9,0.9 );
+  WVPASSNEAR ( T_off.get(31,9), 0.9 );
 }
 
 WVTEST_MAIN("Bounding Box") {
 
+  CompGeom::Geometry geom { {0,0,0}, {0,-1,0}, {1,0,0}, {0,0,1}, {-1,0,0},
+                            {0,1,0}, {0,0,-1} };
   CompGeom::BoundingBox B(32,32);
-  
   CompGeom::Tile *T = B.up();
 
-  T->set(1,1,0.2);
-
-  WVPASSNEAR(T->get(1,1), 0.2 );
+  projectToTile(B,geom);
+  
+  cout << T->get(15,15) << endl;
+  WVPASSNEAR(T->get(15,15), 0 );
 }
  
+WVTEST_MAIN("gHull Serial") {
+  CompGeom::Geometry geom { {0,0,0}, {0,-1,0}, {1,0,0}, {0,0,1}, {-1,0,0},
+                            {0,1,0}, {0,0,-1} };
+
+  auto tris = gHullSerial ( geom );  
+
+
+  std::vector<size_t> result;
+  for ( auto&& t : tris ) {
+    cout << t[0] << endl;
+    result.push_back(t[0]);
+    result.push_back(t[1]);
+    result.push_back(t[2]);
+  }
+  std::sort(result.begin(),result.end());
+  auto it = std::unique(result.begin(),result.end());
+  result.resize(std::distance(result.begin(),it));
+  // WVPASS ( result == std::vector<size_t> ( { 1,2,3,4,5,6 } ) );
+}
+

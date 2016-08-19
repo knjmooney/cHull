@@ -16,52 +16,28 @@
 
 #pragma once
 
+#include <vector>
+
+#include "directionEnums.hpp"
+#include "geometry.hpp"
 #include "tile.hpp"
 
 namespace CompGeom {
+
   class BoundingBox {
   private:
-    Tile ** _T;
-    size_t _w, _h;
+    std::vector < Tile > _T;
+    const size_t  _length;	// width, height and depth
   public:
-    BoundingBox ( size_t w, size_t h ) : _T{new Tile*[6]}, _w{w}, _h{h} {
-      for ( int i=0; i<6; i++ ) {
-	_T[i] = new Tile(w,h);
-      }
-    }
-    ~BoundingBox () { 
-      for ( int i=0; i<6; i++ ) {
-      	delete _T[i];
-      }    
-      delete[] _T; 
-    }
+    BoundingBox ( const size_t &w );
 
-    size_t height() {
-      return _h;
-    }
+    size_t length() const { return _length; }    
 
-    size_t width() {
-      return _w;
-    }
+    Tile& operator[](enum Direction::Dir i) { return _T[i]; }
+    const Tile& operator[](enum Direction::Dir i) const { return _T[i]; }
 
-    Tile * up() const {
-      return _T[0];
-    }
-    Tile * down() const {
-      return _T[1];
-    }
-    Tile * left() const {
-      return _T[2];
-    }
-    Tile * right() const {
-      return _T[3];
-    }
-    Tile * back() const {
-      return _T[4];
-    }
-    Tile * front() const {
-      return _T[5];
-    }
-
+    // Depreciated
+    size_t height() const { return _length; } 
+    size_t width()  const { return _length; }
   };
 }

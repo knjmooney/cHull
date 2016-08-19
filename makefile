@@ -3,18 +3,19 @@ CXX    = g++
 NVCC   = nvcc
 LINKER = nvcc
 
-CFLAGS    = #-O2 -finline-functions -ffast-math -funroll-loops 
+CFLAGS    = -g --std=c++11 #-O2 -finline-functions -ffast-math -funroll-loops 
 CXXFLAGS  = -pedantic -W -Wall -Wextra --std=c++11 $(CFLAGS)
-NVCCFLAGS = -g -G --use_fast_math --std=c++11 $(CFLAGS)
+NVCCFLAGS = -G --use_fast_math $(CFLAGS)
 
 LIB       = ./lib
 SRC       = ./src
 BIN       = ./bin
 INCPATH   = -I$(SRC) -I$(LIB)
 
-TARGET    = $(BIN)/main.o $(BIN)/cudaHull.o $(BIN)/convexHull2D.o $(BIN)/convexHull3D.o $(BIN)/pba2DHost.o
+TARGET    = $(BIN)/main.o $(BIN)/convexHull2D.o $(BIN)/convexHull3D.o $(BIN)/pba2DHost.o $(BIN)/voronoi.o $(BIN)/boundingBox.o $(BIN)/gHullSerial.o $(BIN)/geometryHelper.o #$(BIN)/cudaHull.o
 EXEC      = $(BIN)/convexHull
 
+TEST_ARGS = -a gHullSerial -d 3 -n 1000
 
 all: $(EXEC)
 
@@ -29,6 +30,9 @@ $(BIN)/%.o: $(LIB)/%.cu makefile
 
 $(BIN)/%.o: $(SRC)/%.cpp makefile
 	$(CXX) $(CXXFLAGS) -c $(INCPATH) $< -o $@
+
+debug: $(EXEC)
+	cuda-gdb --args $(EXEC) $(TEST_ARGS) 
 
 plot: $(EXEC)
 	$(EXEC) > temp.dat 

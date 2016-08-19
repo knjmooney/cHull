@@ -22,4 +22,3 @@ std::vector < std::vector < size_t > > insertion3D ( const CompGeom::Geometry &g
 std::vector < std::vector < size_t > > insertion3D ( const CompGeom::Geometry &geom, const std::string &filename ); 
 
 
-std::vector < std::vector < size_t > > gHullSerial ( const CompGeom::Geometry &geom );

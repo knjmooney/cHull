@@ -73,14 +73,15 @@ texture<short2> pbaTexLinks;
 ///////////////////////////////////////////////////////////////////////////
 void pba2DInitialization(int textureSize)
 {
-    pbaTexSize = textureSize; 
-    pbaMemSize = pbaTexSize * pbaTexSize * sizeof(short2); 
-
-    pbaTextures = (short2 **) malloc(2 * sizeof(short2 *)); 
-
-    // Allocate 2 textures
-    cudaMalloc((void **) &pbaTextures[0], pbaMemSize); 
-    cudaMalloc((void **) &pbaTextures[1], pbaMemSize); 
+  cudaSetDevice(1); 	// TO BE DELETED
+  pbaTexSize = textureSize; 
+  pbaMemSize = pbaTexSize * pbaTexSize * sizeof(short2); 
+  
+  pbaTextures = (short2 **) malloc(2 * sizeof(short2 *)); 
+  
+  // Allocate 2 textures
+  cudaMalloc((void **) &pbaTextures[0], pbaMemSize); 
+  cudaMalloc((void **) &pbaTextures[1], pbaMemSize); 
 }
 
 ///////////////////////////////////////////////////////////////////////////

@@ -8,6 +8,8 @@
 #include "../src/face.hpp"
 #include "../src/triangle.hpp"
 #include "../src/edge.hpp"
+#include "../src/unorderedEdge.hpp"
+#include "../src/orderedEdge.hpp"
 #include "../src/convexHull2D.hpp"
 #include "../src/convexHull3D.hpp"
 #include "../src/tile.hpp"
@@ -122,8 +124,8 @@ WVTEST_MAIN("Triangle Class") {
 }
 
 WVTEST_MAIN("Edge Struct") {
-  CompGeom::Edge e0(0,1), e1(1,0), e2(0,2);
-  std::vector <CompGeom::Edge> v = {e0,e1,e2}; 
+  CompGeom::UnorderedEdge e0(0,1), e1(1,0), e2(0,2);
+  std::vector <CompGeom::UnorderedEdge> v = {e0,e1,e2}; 
   WVPASS ( v.size() == 3 );
   auto it = std::unique ( v.begin(), v.end() );
   WVPASS ( std::distance(v.begin(),it ) == 2 ); 

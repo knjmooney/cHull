@@ -11,48 +11,45 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdio>
 #include <limits>
-// #include <pba2D.h>
+
+#include "directionEnums.hpp"
 
 namespace CompGeom {
   class Tile {
   private:
-    float *_F;
-    const size_t _width, _height;
-    const float  maxf = std::numeric_limits<float>::max();
+    std::vector < float  > _VF;
+    std::vector < size_t > _VIDS;
+    const size_t	   _length;
 
-    size_t index(size_t i, size_t j) {return i+j*_width;}
+    float  maxfloat() const { return std::numeric_limits<float>::max(); }
+    size_t maxID()    const { return -1; }
+    size_t index(const size_t &i, const size_t &j) const {return j + i*_length;}
+
   public:
-    Tile () : _F{NULL}, _width{0}, _height{0} {}
-    Tile ( size_t h, size_t w ) : _F{new float[w*h]}, _width{w}, _height{h} {
-      std::fill ( _F, _F+w*h, maxf );
-    }
-    ~Tile () { delete[] _F; }
+    Tile ( size_t length )
+      : _VF  {std::vector<float >(length*length, maxfloat())} 
+      , _VIDS{std::vector<size_t>(length*length, maxID()   )}
+      , _length{length}
+    {}
 
-    float get(size_t i, size_t j) {
-      return _F[j + i*_width];
-    }
+    float  get   ( size_t i, size_t j		) const	{ return _VF[index(i,j)];	}
+    size_t getID ( size_t i, size_t j		) const	{ return _VIDS[index(i,j)];	}
+    void   set   ( size_t i, size_t j, float val)	{ _VF  [index(i,j)] = val;	}
+    void   setID ( size_t i, size_t j, size_t id)	{ _VIDS[index(i,j)] = id;	}
 
-    float width() {
-      return _width;
-    }
-    
-    float height() {
-      return _height;
-    }
+    size_t length	() const { return _length;	}
+    size_t nCols	() const { return _length;	}
+    size_t nRows	() const { return _length;	}
 
-    void set (size_t i, size_t j, float val) {
-      if ( i >= _height || j >= _width ) { throw std::out_of_range("Indexes are out of range"); }
-      _F[j+i*_width] = val;
-    }
-
-    void print() {
-      for ( size_t i=0; i<_height; i++ ) {
-	for ( size_t j=0; j<_width; j++ ) {
-	  size_t id = index(i,j);
-	  if ( _F[id] == maxf ) printf(" -  "         ); 
-	  else                  printf("%3.1f ",_F[id]);
+    void print() const {
+      for ( size_t i=0; i<_length; i++ ) {
+	for ( size_t j=0; j<_length; j++ ) {
+	  size_t	id = index(i,j);
+	  if ( _VF[id] == maxfloat() ) printf(" -  "         ); 
+	  else                       printf("%3.1f ",_VF[id]);
 	}
 	printf("\n"); fflush(stdout);
       }

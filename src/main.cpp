@@ -20,6 +20,7 @@
 
 #include "convexHull2D.hpp"
 #include "convexHull3D.hpp"
+#include "gHullSerial.hpp"
 #include "cudaHull.hpp"		// 2D convex hull on GPU
 #include "errorMessages.hpp"
 #include "geometry.hpp"
@@ -121,7 +122,7 @@ int main(int argc, char *argv[]) {
 	insertion3D(geom,filename);
     }
 
-    if ( token == "gHullSerial" ) {
+    else if ( token == "gHullSerial" ) {
       if ( time_func_calls ) {
 	timer ( gHullSerial(geom) );
       }
@@ -129,20 +130,32 @@ int main(int argc, char *argv[]) {
 	gHullSerial(geom);
     }    
 
-    if ( token == "giftWrap" ) {
+    else if ( token == "giftWrap" ) {
       if ( time_func_calls ) {
 	timer ( giftWrap(geom) );
       }
       else giftWrap(geom) ;
     }    
 
-    if ( token == "grahamScan" ) {
+    else if ( token == "grahamScan" ) {
       if ( time_func_calls ) {
 	timer ( grahamScan(geom) );
       }
       else grahamScan ( geom );
     }    
+    else if ( token == "cudaHull" ) {
+      // if ( time_func_calls ) {
+      // 	timer ( cudaHull(geom) );
+      // }
+      // else cudaHull ( geom );
+    }    
+
+    else {
+      cerr << "Don't recognise algorithm " << token << endl;
+    }
   }
+
+  cout << (1 or 1) << endl;
 
   return EXIT_SUCCESS;
 }

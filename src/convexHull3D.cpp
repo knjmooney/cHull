@@ -26,22 +26,25 @@ using namespace std;
 /////////////////////////////  INSERTION 3D  /////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
+// Deprecated
+// This has been superseeded by the member function, Triangle::isVisible()
 // Helper function
 // Finds the dot product between the norm of a triangle and 
 // a ray from some point to the com of the triangle
 // If it is negative, the triangle face is visible to the point
-bool isTrinagleVisible ( const CompGeom::Triangle &t, const CompGeom::Point &p) {
+inline bool isTrinagleVisible ( const CompGeom::Triangle &t, const CompGeom::Point &p) {
   const CompGeom::Point &n = t.normal();
   const CompGeom::Point  m = p - t.com();
   return n[0]*m[0] + n[1]*m[1] + n[2]*m[2] < 0;
 }
 
+
 // Helper function
 // Removes an element if it's already in the list, otherwise adds it.
 // list is O(n) search which is bad
 void addPotentialEdge ( list<CompGeom::UnorderedEdge> &arr, size_t id0, size_t id1 ) {
-  CompGeom::UnorderedEdge	E  = {id0, id1};
-  auto				it = find (arr.begin(),arr.end(), E ); 
+  const CompGeom::UnorderedEdge	E  = {id0, id1};
+  const auto			it = find (arr.begin(),arr.end(), E ); 
   if ( it == arr.end() )
     arr.insert ( it, E );
   else
@@ -52,7 +55,7 @@ void addPotentialEdge ( list<CompGeom::UnorderedEdge> &arr, size_t id0, size_t i
 // such that the vertices are ordered anti-clockwise when viewing triangle from 
 // the normal
 vector < vector < size_t > > insertion3D ( const CompGeom::Geometry &geom ) {
-  if ( geom.size() < 4 ) errorM ( "3D hull must have at least 4 points" ); 
+  if ( geom.size()    < 4 ) errorM ( "3D hull must have at least 4 points" ); 
   if ( geom.getDim() != 3 ) errorM ( "Insertion3D only works in 3 dimensions" );
 
   // Construct initial triangle

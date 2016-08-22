@@ -68,6 +68,8 @@ namespace CompGeom {
       _norm = - _norm;		// This might be inefficient
     }
   };
+
+
 }
 
 

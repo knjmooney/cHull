@@ -19,6 +19,7 @@
 #include "geometryHelper.hpp"
 #include "orderedEdge.hpp"
 #include "pba2D.h"		// Parallel Banding Algorithm
+#include "triangle.hpp"
 #include "voronoi.hpp"
 #include "workingSet.hpp"
 
@@ -33,12 +34,9 @@
 #define BOXSIZE 512
 #define DIM     3
 
+// I should reconsider using two namespaces
 using namespace std;
-using CompGeom::Geometry;
-using CompGeom::BoundingBox;
-using CompGeom::Tile;
-using CompGeom::OrderedEdge;
-using CompGeom::WorkingSet;
+using namespace CompGeom;
 
 //////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////  GHULL SERIAL  /////////////////////////////////////////////
@@ -46,7 +44,7 @@ using CompGeom::WorkingSet;
 
 // Maybe a little bit excesive on the local variables
 void projectToTile (CompGeom::Tile& T, const CompGeom::Geometry & geom, 
-		    vector<float> ex, const size_t & dir ) 
+		    vector<float> ex, const Direction::Dir dir ) 
 {
   const size_t w   = T.nCols();
   const size_t h   = T.nRows();
@@ -58,6 +56,8 @@ void projectToTile (CompGeom::Tile& T, const CompGeom::Geometry & geom,
   const float maxw = ex[j+DIM];
   const float maxh = ex[k+DIM];
 
+
+  // int watchj=-1, watchk=-1;
   for ( size_t p_i = 0; p_i<geom.size(); p_i++ ) {
     const auto &p = geom[p_i];
     int	idj = int(w*(p[j]-minw)/((maxw-minw)*(1+EPS)));
@@ -66,6 +66,10 @@ void projectToTile (CompGeom::Tile& T, const CompGeom::Geometry & geom,
     float	cmin_val = T.get(idj,idk);
     float	this_min = fabs(p[i]-ex[i]);
     if ( cmin_val > this_min ) {
+      // if ( p_i == 101 || ( watchj == idj && watchk == idk ) ) {
+      // 	cout << dir << " " << p_i << " " << idj << " " << idk <<  endl;
+      // 	watchj = idj; watchk = idk;
+      // }
       T.set  (idj,idk, this_min   );
       T.setID(idj,idk, p_i        );
     }
@@ -82,6 +86,7 @@ void projectToBox ( CompGeom::BoundingBox &B, const CompGeom::Geometry &geom ) {
   for ( auto dir : Direction::allDirections() ) { 
     projectToTile ( B[dir], geom, extremes, dir );
   }
+  
 }
 
 //////////////////////// Construct Voronois ////////////////////////////////
@@ -98,6 +103,7 @@ void fillVoronoiInput ( short * input, const CompGeom::Tile &T ) {
   size_t	w = T.nCols();
   size_t	h = T.nRows();
 
+  // int count = 0;
   std::fill ( input, input + 2*w*h, MARKER );
   for ( size_t idj = 0; idj < w; idj++ ) {
     for ( size_t idk = 0; idk < h; idk++ ) {
@@ -105,9 +111,11 @@ void fillVoronoiInput ( short * input, const CompGeom::Tile &T ) {
       if ( T.get(idj,idk) != numeric_limits<float>::max() ) {
 	input[index]	  = idk;
 	input[index+1]	  = idj;
+	// count++;
       }
     }
   }
+  // cout << count << endl;
 }
 
 // Prints the array of pairs of short indexes
@@ -183,6 +191,8 @@ void findDualEdges ( vector<OrderedEdge> &W, const Tile &T, const Voronoi & V ) 
 	    // pba2D has indexing (j,i) so the ids are swapped around
 	    size_t id0 = T.getID ( V[i ][j ][1], V[i ][j ][0] );
 	    size_t id1 = T.getID ( V[ni][nj][1], V[ni][nj][0] );
+	    // if ( id0 == 101 ) cout << id0 << " " << id1 << endl;
+	    // if ( id1 == 101 ) cout << id0 << " " << id1 << endl;
 	    W.push_back(OrderedEdge ( id0, id1 ));
 	  }
       }
@@ -201,38 +211,62 @@ void constructWorkingSets ( vector<WorkingSet> & W,
     findDualEdges ( Vedges, B[dir], V[dir%3] );
   }
 
+  // vector < OrderedEdge > temp;
+  // for ( auto row : V[2] ) {
+  //   for ( auto ei : row ) {
+  //     temp.push_back( OrderedEdge ( ei[0], ei[1] ) );
+  //   }
+  // }
+  // sort ( temp.begin(), temp.end() );
+  // auto end_it = unique ( temp.begin(), temp.end() );
+  // cout << "temp distance: " << distance ( temp.begin(), end_it ) << endl;
+
+
   // Sort and remove duplicates
   sort(Vedges.begin(),Vedges.end());
   auto it = unique(Vedges.begin(),Vedges.end());
   Vedges.resize ( distance ( Vedges.begin(), it ), OrderedEdge(-1,-1) );
 
+  // for ( auto ei : Vedges ) {
+  //   if ( ei.first == 101 ) cout << ei.first << " " << ei.second << endl;
+  // }
+
   // Construct the vector of Working Sets
   size_t curr_index = 0;
   WorkingSet curr;
   for ( auto ei : Vedges ) {
-    if ( ei.first == curr_index ) {
-      curr.push_back(ei);
-    } 
-    else {
-      curr_index = ei.first;
-      W.push_back(curr);
+    if ( ei.first != curr_index ) {
+      if ( !curr.empty() ) W.push_back(curr);
       curr.resize(0, OrderedEdge(-1,-1));
+      curr_index = ei.first;
     }
+    curr.push_back(ei);
   }
 }
 
-WorkingSet constructStar_h ( const WorkingSet & W ) {
+WorkingSet constructStar_h ( const WorkingSet & W, const CompGeom::Geometry &geom ) {
   if ( W.size() < 3 ) errorM("Working Set does not have enough edges");
 
-  for ( auto ei : W ) {
-    ;;
-  }
+  Triangle ( W[0].first, W[0].second, W[1].second, geom );
+
+  // for ( auto ei : W ) {
+  //   ;;
+  // }
   return WorkingSet(0,OrderedEdge(-1,-1));
 }
 
-void constructStars       ( vector < WorkingSet >& S, const vector < WorkingSet > &W ) {
+void constructStars   ( vector < WorkingSet >& S, 
+			const vector < WorkingSet > &W, 
+			const CompGeom::Geometry &geom ) 
+{
   for ( auto& wset : W ) {
-    S.push_back(constructStar_h ( wset ));
+    // try { 
+    S.push_back(constructStar_h ( wset, geom ));
+    // } catch( std::logic_error &e ) {
+    //   cout << __LINE__ << " " << e.what() << endl;
+    //   for ( auto ei : wset ) 
+    // 	cout << ei.first <<" " << ei.second << endl;
+    // }
   }
 }
 
@@ -242,17 +276,16 @@ vector < vector < size_t > > gHullSerial ( const CompGeom::Geometry &geom ) {
 
   CompGeom::BoundingBox  B  (BOXSIZE );
   vector < Voronoi     > V  (DIM    ,Voronoi(BOXSIZE, VoronoiRow(BOXSIZE, vector < short > (2) ) ) );
-  // vector < OrderedEdge > W  ;
   vector < WorkingSet  > W, S; 
 
-  projectToBox         ( B, geom );
-  constructVoronois    ( B, V    );
-  constructWorkingSets ( W, B, V );
-  constructStars       ( S, W    );
+  projectToBox         ( B, geom    );
+  constructVoronois    ( B, V       );
+  constructWorkingSets ( W, B, V    );
+  constructStars       ( S, W, geom );
 
-  // makeVoronoiPBM(V[0],"images/test1.pbm");
-  // makeVoronoiPBM(V[1],"images/test2.pbm");
-  // makeVoronoiPBM(V[2],"images/test3.pbm");
+  makeVoronoiPBM(V[0],"images/test1.pbm");
+  makeVoronoiPBM(V[1],"images/test2.pbm");
+  makeVoronoiPBM(V[2],"images/test3.pbm");
   
   return vector < vector < size_t > > ( 1,{0,1,2} );
 }

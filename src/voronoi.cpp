@@ -9,6 +9,9 @@
  * NOTES:
  ******************************************************/
 
+#include <iostream>
+#include <set>
+
 #include "pba2D.h"
 #include "voronoi.hpp"
 
@@ -67,16 +70,23 @@ void makeVoronoiPBM( short * V, short * In, size_t w, size_t h, const string &fi
 void makeVoronoiPBM( const Voronoi &V, const string &filename ) {  
   FILE *fp = fopen(filename.c_str(), "wb"); /* b - binary mode */
   fprintf(fp, "P6\n%lu %lu\n255\n", V.size(), V.size());
+  std::set<int> cols;
   for ( auto row : V ) {
     for ( auto p : row ) {
-      static unsigned char color[3];
-      srand(p[0]*p[1]);
-      color[0] = rand()   % 256;  /* red */
-      color[1] = rand()   % 256;  /* green */
-      color[2] = rand()   % 256;  /* blue */
-      (void) fwrite(color, 1, 3, fp);
+      vector < unsigned char > colour(3);
+      // srand(p[0]+V.size()*p[1]);
+      int base = p[0] + V.size()*p[1];
+      // colour[0] = rand()   % 256;  /* red */
+      // colour[1] = rand()   % 256;  /* green */
+      // colour[2] = rand()   % 256;  /* blue */
+      colour[0] = (base >> 16) % 256;
+      colour[1] = (base >> 8) % 256;
+      colour[2] = base % 256;
+      (void) fwrite(&colour[0], 1, 3*sizeof(unsigned char), fp);
+      cols.insert(base);
     }
   }
+  cout << cols.size() << endl;
   fclose(fp);
 }
 

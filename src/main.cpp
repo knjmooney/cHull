@@ -19,7 +19,7 @@
 #include <unistd.h>		// unix standard header file
 
 #include "convexHull2D.hpp"
-#include "convexHull3D.hpp"
+#include "insertion3D.hpp"
 #include "gHullSerial.hpp"
 #include "cudaHull.hpp"		// 2D convex hull on GPU
 #include "errorMessages.hpp"

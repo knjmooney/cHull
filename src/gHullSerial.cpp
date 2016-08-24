@@ -11,17 +11,23 @@
 
 #include <algorithm>
 #include <limits>
+#include <list>
 #include <string>
 #include <vector>
 
 #include "boundingBox.hpp"
+#include "convexHull3D.hpp"
 #include "geometry.hpp"
 #include "geometryHelper.hpp"
 #include "orderedEdge.hpp"
+#include "unorderedEdge.hpp"
 #include "pba2D.h"		// Parallel Banding Algorithm
 #include "triangle.hpp"
 #include "voronoi.hpp"
 #include "workingSet.hpp"
+#include "star.hpp"
+
+#include "removeInsert.hpp"
 
 #define EPS	1e-5		// Epsilon
 
@@ -181,7 +187,7 @@ void findDualEdges ( vector<OrderedEdge> &W, const Tile &T, const Voronoi & V ) 
     for ( int j=0; j<L; j++ ) {
 
       // Direction of the nearest neighbours
-      vector<vector<int>> dir =  {{-1,0},{0 ,-1},{0 ,1},{1 ,0}};      
+      const vector<vector<int>> dir =  {{-1,0},{0 ,-1},{0 ,1},{1 ,0}};      
       for ( auto d : dir ) {
 	int ni = i+d[0];
 	int nj = j+d[1];
@@ -211,25 +217,10 @@ void constructWorkingSets ( vector<WorkingSet> & W,
     findDualEdges ( Vedges, B[dir], V[dir%3] );
   }
 
-  // vector < OrderedEdge > temp;
-  // for ( auto row : V[2] ) {
-  //   for ( auto ei : row ) {
-  //     temp.push_back( OrderedEdge ( ei[0], ei[1] ) );
-  //   }
-  // }
-  // sort ( temp.begin(), temp.end() );
-  // auto end_it = unique ( temp.begin(), temp.end() );
-  // cout << "temp distance: " << distance ( temp.begin(), end_it ) << endl;
-
-
   // Sort and remove duplicates
   sort(Vedges.begin(),Vedges.end());
   auto it = unique(Vedges.begin(),Vedges.end());
   Vedges.resize ( distance ( Vedges.begin(), it ), OrderedEdge(-1,-1) );
-
-  // for ( auto ei : Vedges ) {
-  //   if ( ei.first == 101 ) cout << ei.first << " " << ei.second << endl;
-  // }
 
   // Construct the vector of Working Sets
   size_t curr_index = 0;
@@ -244,14 +235,96 @@ void constructWorkingSets ( vector<WorkingSet> & W,
   }
 }
 
+// Untested
+void delete_visible_backwards ( list<Triangle> &Star, const CompGeom::Point &p ) {
+  auto it = Star.end();
+  --it;
+  while ( it->isVisible(p) ) {
+    --it;
+  }
+  ++it;
+  Star.erase(it,Star.end());
+}
+
+// Untested
+void delete_visible_forwards ( list<Triangle> &Star, const CompGeom::Point &p) {
+  auto it = Star.begin();
+  while ( it->isVisible(p) ) {
+    it++;
+  }
+  Star.erase(Star.begin(),it);
+}
+
+
 WorkingSet constructStar_h ( const WorkingSet & W, const CompGeom::Geometry &geom ) {
   if ( W.size() < 3 ) errorM("Working Set does not have enough edges");
 
-  Triangle ( W[0].first, W[0].second, W[1].second, geom );
+  Star tstar(W[0].first);
+  Triangle t0( tstar.id , W[0].second, W[1].second, geom );
 
-  // for ( auto ei : W ) {
-  //   ;;
-  // }
+  auto id = W[2].second;
+  if ( t0.isVisible(geom[id]) ) {
+    t0.invert();
+  }
+
+  tstar.insert( tstar.end(), t0[1] );
+  tstar.insert( tstar.end(), t0[2] );
+  tstar.insert( tstar.end(), id    );
+
+  auto it = W.begin();
+  for ( advance(it,4); it!=W.end(); it++ ) {
+    const auto &pid = it->second;
+    const auto &p  = geom[pid];
+    size_t to,from;
+
+    Triangle tri(tstar.id,tstar.back(),tstar.front(),geom);
+    if ( tri.isVisible(p) ) {
+
+      // Find first instance it's not visible
+      for ( size_t i=0; i<tstar.size()-1; i++ ) {
+	tri = Triangle ( tstar.id, tstar[i], tstar[i+1], geom );
+	if ( !tri.isVisible(p) ) {
+	  to = i;
+	  break;
+	}
+      }
+
+      // Find next instance it's visible
+      for ( size_t i=to; i<tstar.size()-1; i++ ) {
+	tri = Triangle ( tstar.id, tstar[i], tstar[i+1], geom );
+	if ( tri.isVisible(p) ) {
+	  from = i;
+	  break;
+	}
+      }
+    } 
+
+    else {
+      // Find first instance it's not visible
+      for ( size_t i=0; i<tstar.size()-1; i++ ) {
+	tri = Triangle ( tstar.id, tstar[i], tstar[i+1], geom );
+	if ( tri.isVisible(p) ) {
+	  from = i;
+	  break;
+	}
+      }
+
+      // Find next instance it's visible
+      for ( size_t i=from; i<tstar.size()-1; i++ ) {
+	tri = Triangle ( tstar.id, tstar[i], tstar[i+1], geom );
+	if ( !tri.isVisible(p) ) {
+	  to = i;
+	  break;
+	}
+      }      
+    }
+
+    if (from != to ) {
+      removeInsert ( tstar.edges, pid, from, to );
+    }
+  }
+
+  // ch.print ( "data/test.dat" );
   return WorkingSet(0,OrderedEdge(-1,-1));
 }
 

@@ -31,7 +31,10 @@ namespace CompGeom {
     // The norm and centre of mass are calculated on construction 
     // and then all points are discarded except for their IDS
     Triangle ( size_t id0, size_t id1, size_t id2, const Geometry &geom) : 
-      _vertices{{id0,id1,id2}}, _norm{3}, _com{3} { 
+      _vertices{{id0,id1,id2}}, 
+      _norm{Point(3)}, 
+      _com {Point(3)} 
+    { 
 
       const Point &p0 = geom[id0], &p1 = geom[id1], &p2 = geom[id2];
       _com  = Point { { (p0[0] + p1[0] + p2[0])/3, 

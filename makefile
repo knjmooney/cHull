@@ -3,7 +3,8 @@ CXX    = g++
 NVCC   = nvcc
 LINKER = nvcc
 
-CFLAGS    = -g --std=c++11 #-O2 -finline-functions -ffast-math -funroll-loops 
+PROF      = 
+CFLAGS    = -g $(PROF) --std=c++11 #-O2 -finline-functions -ffast-math -funroll-loops 
 CXXFLAGS  = -pedantic -W -Wall -Wextra --std=c++11 $(CFLAGS)
 NVCCFLAGS = -G --use_fast_math $(CFLAGS)
 
@@ -12,7 +13,7 @@ SRC       = ./src
 BIN       = ./bin
 INCPATH   = -I$(SRC) -I$(LIB)
 
-TARGET    = $(BIN)/main.o $(BIN)/convexHull2D.o $(BIN)/convexHull3D.o $(BIN)/pba2DHost.o $(BIN)/voronoi.o $(BIN)/boundingBox.o $(BIN)/gHullSerial.o $(BIN)/geometryHelper.o #$(BIN)/cudaHull.o
+TARGET    = $(BIN)/main.o $(BIN)/convexHull2D.o $(BIN)/pba2DHost.o $(BIN)/voronoi.o $(BIN)/boundingBox.o $(BIN)/gHullSerial.o $(BIN)/geometryHelper.o $(BIN)/insertion3D.o #$(BIN)/cudaHull.o
 EXEC      = $(BIN)/convexHull
 
 TEST_ARGS = -a gHullSerial -d 3 -n 1000
@@ -20,7 +21,7 @@ TEST_ARGS = -a gHullSerial -d 3 -n 1000
 all: $(EXEC)
 
 $(EXEC): $(TARGET)
-	$(LINKER) -g -o ${EXEC} ${TARGET} 	
+	$(LINKER) $(PROF) -o ${EXEC} ${TARGET} 	
 
 $(BIN)/%.o: $(SRC)/%.cu makefile
 	$(NVCC) $(NVCCFLAGS) -c $(INCPATH) $< -o $@

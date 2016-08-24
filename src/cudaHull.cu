@@ -58,7 +58,6 @@ struct upwardFacing : public thrust::unary_function<id_coord_rotation_tuple,bool
   __host__ __device__
   bool operator() ( const id_coord_rotation_tuple &a) {
     return !a.get<3>();
-    // return true;
   }
 };
 

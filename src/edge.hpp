@@ -13,14 +13,16 @@
 
 #pragma once
 
+#include <limits>
+
 #include "errorMessages.hpp"
 
 namespace CompGeom {
   
   struct Edge {
     
-    size_t first = -1;
-    size_t second = -1;
+    size_t first = std::numeric_limits<size_t>::max();
+    size_t second = std::numeric_limits<size_t>::max();
     
     // Store in sorted order
     Edge ( size_t id0, size_t id1 ) : first{id0}, second{id1} {}

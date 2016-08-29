@@ -1,8 +1,8 @@
 CC  = nvcc
 
 BIN     = ../bin
-OBJ     = $(BIN)/convexHull2D.o $(BIN)/convexHull3D.o $(BIN)/cudaHull.o $(BIN)/pba2DHost.o
-INC     = -I. -I../lib/ 
+OBJ     = $(BIN)/convexHull2D.o $(BIN)/insertion3D.o $(BIN)/pba2DHost.o $(BIN)/gHullSerial.o $(BIN)/boundingBox.o $(BIN)/geometryHelper.o $(BIN)/voronoi.o
+INC     = -I. -I../lib/ -I../src/
 
 all: t/wvtest
 

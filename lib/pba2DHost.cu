@@ -73,7 +73,6 @@ texture<short2> pbaTexLinks;
 ///////////////////////////////////////////////////////////////////////////
 void pba2DInitialization(int textureSize)
 {
-  cudaSetDevice(1); 	// TO BE DELETED
   pbaTexSize = textureSize; 
   pbaMemSize = pbaTexSize * pbaTexSize * sizeof(short2); 
   
@@ -101,6 +100,11 @@ void pba2DDeinitialization()
 void pba2DInitializeInput(short *input)
 {
     cudaMemcpy(pbaTextures[0], input, pbaMemSize, cudaMemcpyHostToDevice); 
+}
+
+void pba2DInitializeInput_d(short *input)
+{
+    cudaMemcpy(pbaTextures[0], input, pbaMemSize, cudaMemcpyDeviceToDevice); 
 }
 
 // In-place transpose a squared texture. 
@@ -211,5 +215,20 @@ void pba2DVoronoiDiagram(short *input, short *output, int floodBand, int maurerB
 
     // Copy back the result
     cudaMemcpy(output, pbaTextures[1], pbaMemSize, cudaMemcpyDeviceToHost); 
+}
+
+
+// Added by Kevin Mooney on the 27/08/16
+// Transfers the voronoi diagram from input and output arrays on device
+void pba2DVoronoiDiagram_d(short *input, short *output, int floodBand, int maurerBand, int colorBand) 
+{
+    // Initialization
+    pba2DInitializeInput_d(input); 
+
+    // Computation
+    pba2DCompute(floodBand, maurerBand, colorBand); 
+
+    // Copy back the result
+    cudaMemcpy(output, pbaTextures[1], pbaMemSize, cudaMemcpyDeviceToDevice); 
 }
 

@@ -380,9 +380,9 @@ vector < vector < size_t > > gHullSerial ( const CompGeom::Geometry &geom ) {
   constructWorkingSets ( W, B, V    );
   constructStars       ( S, W, geom );
 
-  // makeVoronoiPBM(V[Direction::LEFT],"images/voronoi_left.pbm" ,B[Direction::LEFT ]);
-  // makeVoronoiPBM(V[Direction::BACK],"images/voronoi_back.pbm" ,B[Direction::BACK ]);
-  // makeVoronoiPBM(V[Direction::DOWN],"images/voronoi_down.pbm" ,B[Direction::DOWN ]);
+  makeVoronoiPBM(V[Direction::LEFT],"images/voronoi_left.pbm" ,B[Direction::LEFT ]);
+  makeVoronoiPBM(V[Direction::BACK],"images/voronoi_back.pbm" ,B[Direction::BACK ]);
+  makeVoronoiPBM(V[Direction::DOWN],"images/voronoi_down.pbm" ,B[Direction::DOWN ]);
   // makeVoronoiPBM(V[Direction::LEFT],"images/voronoi_right.pbm",B[Direction::RIGHT]);
   // makeVoronoiPBM(V[Direction::BACK],"images/voronoi_front.pbm",B[Direction::FRONT]);
   // makeVoronoiPBM(V[Direction::DOWN],"images/voronoi_up.pbm"   ,B[Direction::UP   ]);

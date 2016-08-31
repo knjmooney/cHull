@@ -302,7 +302,7 @@ void countOutEdges_d(int *out_edges_p,short *V) {
   if ( idx < RES && idy < RES ) {
     int index  = idx*RES + idy;
     int sindex = 2*index;
-    int count  = 0;
+    // int count  = 0;
 
     const int dir[4][2] =  {{-1,0},{0 ,-1},{0 ,1},{1 ,0}};
     for ( auto d : dir ) {
@@ -314,15 +314,16 @@ void countOutEdges_d(int *out_edges_p,short *V) {
       if ( !(ni < 0 || nj < 0 || ni >= RES || nj >= RES) 
       	   && (V[nindex] != V[sindex] || V[nindex+1] != V[sindex+1]) )
       	{
-	  count++;
+	  // count++;
+	  out_edges_p[index]++;
 	}
     }
-    out_edges_p[index] = max(0,count-2);
+    // out_edges_p[index] = max(0,count-2);
   }  
 }
 
 __global__
-void constructWorkingSet_d(int *frsts,int*scnds,short *V, Face *face) {
+void constructWorkingSet_d(int *frsts,int*scnds,short *V, Face *face,int *out_edges_offest) {
   int idx   = blockIdx.x*blockDim.x+threadIdx.x;
   int idy   = blockIdx.y*blockDim.y+threadIdx.y;
 
@@ -341,11 +342,16 @@ void constructWorkingSet_d(int *frsts,int*scnds,short *V, Face *face) {
       if ( !(ni < 0 || nj < 0 || ni >= RES || nj >= RES) 
       	   && (V[nindex] != V[sindex] || V[nindex+1] != V[sindex+1]) )
       	{
-	  frsts[index*4+count] = face->get_id ( V[sindex+1], V[sindex] );   
-	  scnds[index*4+count] = face->get_id ( V[nindex+1], V[nindex] );   
+	  frsts[out_edges_offest[index]+count] = face->get_id ( V[sindex+1], V[sindex] );   
+	  scnds[out_edges_offest[index]+count] = face->get_id ( V[nindex+1], V[nindex] );   
 	  count++;
 	}
     }
+    // If only one edge was added, then it's definitely double counting
+    // if ( count == 1 ) {
+    //   frsts[index*4] = frsts[index*4+1];   
+    //   scnds[index*4] = scnds[index*4+1];   
+    // }
   }  
 }
 
@@ -393,26 +399,26 @@ void constructVoronois_d( dvec<int> &firsts, dvec<int> &seconds, Face *face ) {
 
   /////////// This was an attempt at finding the dual using a prefix sum
 
-  // dvec<int> n_out_edges(6*RSQ,0);
-  // for ( int i=0; i<3; i++ ) {
-  //   short * output_p    = thrust::raw_pointer_cast(&output[i][0]);
-  //   int   * out_edges_p;
+  dvec<int> n_out_edges(6*RSQ,0);
+  for ( int i=0; i<3; i++ ) {
+    short * output_p    = thrust::raw_pointer_cast(&output[i][0]);
+    int   * out_edges_p;
 
-  //   out_edges_p = thrust::raw_pointer_cast(&n_out_edges[i*RSQ]);
-  //   countOutEdges_d<<<dimBlock,dimGrid>>>(out_edges_p,output_p);
+    out_edges_p = thrust::raw_pointer_cast(&n_out_edges[i*RSQ]);
+    countOutEdges_d<<<dimBlock,dimGrid>>>(out_edges_p,output_p);
 
-  //   out_edges_p = thrust::raw_pointer_cast(&n_out_edges[(i+DIM)*RSQ]);
-  //   countOutEdges_d<<<dimBlock,dimGrid>>>(out_edges_p,output_p);    
-  // }
+    out_edges_p = thrust::raw_pointer_cast(&n_out_edges[(i+DIM)*RSQ]);
+    countOutEdges_d<<<dimBlock,dimGrid>>>(out_edges_p,output_p);    
+  }
 
-  // // Find the offsets for each array plus the output size
-  // size_t sz = n_out_edges.back();
-  // thrust::exclusive_scan(n_out_edges.begin(),n_out_edges.end(),n_out_edges.begin());
-  // sz += n_out_edges.back();
+  //Find the offsets for each array plus the output size
+  size_t sz = n_out_edges.back();
+  thrust::exclusive_scan(n_out_edges.begin(),n_out_edges.end(),n_out_edges.begin());
+  sz += n_out_edges.back();
 
   // cout << "Size of initial triangulation: " << sz << endl; 
-  // dvec< int > firsts (3*sz);
-  // dvec< int > seconds(3*sz);
+  firsts  = dvec< int > (sz,std::numeric_limits<int>::max());
+  seconds = dvec< int > (sz,std::numeric_limits<int>::max());
 
   // for ( int i=0; i<3; i++ ) {
   //   short * output_p    = thrust::raw_pointer_cast(&output[i][0]);
@@ -431,24 +437,33 @@ void constructVoronois_d( dvec<int> &firsts, dvec<int> &seconds, Face *face ) {
 
   //////// I just allocated the maximum possible need memory and then reduce it at the end
 
-  firsts  = dvec<int>(6*4*RES*RES,std::numeric_limits<int>::max());  
-  seconds = dvec<int>(6*4*RES*RES,std::numeric_limits<int>::max());  
+  // firsts  = dvec<int>(6*4*RES*RES,std::numeric_limits<int>::max());  
+  // seconds = dvec<int>(6*4*RES*RES,std::numeric_limits<int>::max());  
   for ( int i=0; i<3; i++ ) {
     short * output_p    = thrust::raw_pointer_cast(&output[i][0]);
     int   * firsts_p;
     int   * seconds_p;
+    int   * out_edges_p;
 
     // All the min faces
-    firsts_p    = thrust::raw_pointer_cast(&firsts[i*4*RSQ]   );
-    seconds_p   = thrust::raw_pointer_cast(&seconds[i*4*RSQ]  );
-    constructWorkingSet_d<<<dimBlock,dimGrid>>> (firsts_p,seconds_p,
-						 output_p,&face[i]);
+    firsts_p    = thrust::raw_pointer_cast(&firsts[0]   );
+    seconds_p   = thrust::raw_pointer_cast(&seconds[0]  );
+    out_edges_p = thrust::raw_pointer_cast(&n_out_edges[i*RSQ]);
+    constructWorkingSet_d<<<dimBlock,dimGrid>>> (firsts_p,
+						 seconds_p,
+						 output_p,
+						 &face[i],
+						 out_edges_p);
 
     // All the max faces
-    firsts_p    = thrust::raw_pointer_cast(&firsts[(i+DIM)*4*RSQ]   );
-    seconds_p   = thrust::raw_pointer_cast(&seconds[(i+DIM)*4*RSQ]  );    
-    constructWorkingSet_d<<<dimBlock,dimGrid>>> (firsts_p,seconds_p,
-						 output_p,&face[i+DIM]);
+    // firsts_p    = thrust::raw_pointer_cast(&firsts[(i+DIM)*4*RSQ]   );
+    // seconds_p   = thrust::raw_pointer_cast(&seconds[(i+DIM)*4*RSQ]  );
+    out_edges_p = thrust::raw_pointer_cast(&n_out_edges[(i+DIM)*RSQ]);
+    constructWorkingSet_d<<<dimBlock,dimGrid>>> (firsts_p,
+						 seconds_p,
+						 output_p,
+						 &face[i+DIM],
+						 out_edges_p);
   }  
   
   //////////////////// SORT AND REMOVE DUPLICATES ////////////////////////////////
@@ -460,23 +475,25 @@ void constructVoronois_d( dvec<int> &firsts, dvec<int> &seconds, Face *face ) {
     = thrust::make_zip_iterator ( thrust::make_tuple ( firsts.end(),   
 						       seconds.end()   ) );
 
-  cout << "Before Removing Markers: " << thrust::distance ( edgesStart,edgesEnd ) << endl;
-
-  edgesEnd = thrust::remove ( edgesStart, edgesEnd, 
-			      thrust::tuple<int,int> (std::numeric_limits<int>::max(),
-						      std::numeric_limits<int>::max()));
+  // cout << "Before Removing Markers      : " 
+  //      << thrust::distance ( edgesStart,edgesEnd ) << endl;
+  // edgesEnd = thrust::remove ( edgesStart, edgesEnd, 
+  // 			      thrust::tuple<int,int> (std::numeric_limits<int>::max(),
+  // 						      std::numeric_limits<int>::max()));
 
   // Remove some duplicates before sorting
-  edgesEnd = thrust::unique ( edgesStart, edgesEnd );
+  // cout << "Before Removing Duplicates 1 : " 
+  //      << thrust::distance ( edgesStart,edgesEnd ) << endl;
+  // edgesEnd = thrust::unique ( edgesStart, edgesEnd );
   thrust::sort ( edgesStart, edgesEnd  , compareEdges() );
-  cout << "Before Removing Duplicates : " 
-       << thrust::distance ( edgesStart,edgesEnd ) << endl;
+  // cout << "Before Removing Duplicates 2 : " 
+  //      << thrust::distance ( edgesStart,edgesEnd ) << endl;
   edgesEnd = thrust::unique ( edgesStart, edgesEnd );
 
   firsts.resize(thrust::distance ( edgesStart,edgesEnd ));
   seconds.resize(thrust::distance ( edgesStart,edgesEnd ));
 
-  cout << "Final Size : " << firsts.size() << endl;
+  // cout << "Final Size : " << firsts.size() << endl;
   // dvec<int> star_count
   // for ( auto it = edgesStart; it != edgesEnd; ++it ) {
   //   cout << thrust::get<0>(*it) << " " << thrust::get<1>(*it) << endl;
@@ -553,7 +570,7 @@ static void constructStars_d ( Stars *stars_d,
 
 std::vector < std::vector < size_t > > gHull ( const CompGeom::Geometry &geom ) {
 
-  chooseCudaCard(0);
+  // chooseCudaCard(0);
   gpuErrchk ( cudaGetLastError() );
 
   size_t N = geom.size();
@@ -631,12 +648,12 @@ std::vector < std::vector < size_t > > gHull ( const CompGeom::Geometry &geom ) 
 					     star_ids.begin()  ,
 					     star_sizes.begin() );
 
-  for ( auto it = star_ids.begin(), it2 = star_sizes.begin(); 
-	it != key_val_end.first; 
-	++it, ++it2 ) 
-    {
-      cout << *it << ": " << *it2 << endl;
-    } 
+  // for ( auto it = star_ids.begin(), it2 = star_sizes.begin(); 
+  // 	it != key_val_end.first; 
+  // 	++it, ++it2 ) 
+  //   {
+  //     cout << *it << ": " << *it2 << endl;
+  //   } 
   
   int n_stars = thrust::distance ( star_ids.begin(), key_val_end.first );
   

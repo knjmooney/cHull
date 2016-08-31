@@ -164,10 +164,10 @@ int main(int argc, char *argv[]) {
       else grahamScan ( geom );
     }    
     else if ( token == "cudaHull" ) {
-      // if ( time_func_calls ) {
-      // 	timer ( cudaHull(geom) );
-      // }
-      // else cudaHull ( geom );
+      if ( time_func_calls ) {
+      	timer ( cudaHull(geom) );
+      }
+      else cudaHull ( geom );
     }    
     else if ( token == "gHull" ) {
       if ( time_func_calls ) {

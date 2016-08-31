@@ -9,15 +9,13 @@ CXXFLAGS  = -pedantic -W -Wall -Wextra --std=c++11 $(CFLAGS)
 NVCCFLAGS = -G --use_fast_math -arch=sm_35 -dc $(CFLAGS)
 LDFLAGS   = -lcudadevrt
 
-LIB       = ./lib
-SRC       = ./src
-BIN       = ./bin
+LIB       = ../lib
+SRC       = ../src
+BIN       = ../bin
 INCPATH   = -I$(SRC) -I$(LIB)
 
-TARGET    = $(BIN)/main.o $(BIN)/convexHull2D.o $(BIN)/pba2DHost.o $(BIN)/voronoi.o $(BIN)/boundingBox.o $(BIN)/gHullSerial.o $(BIN)/geometryHelper.o $(BIN)/insertion3D.o $(BIN)/gHull.o $(BIN)/cudaHull.o
-EXEC      = $(BIN)/convexHull
-
-TEST_ARGS = -a gHull -d 3 -n 10000
+TARGET    = $(BIN)/benchmark.o $(BIN)/convexHull2D.o $(BIN)/pba2DHost.o $(BIN)/voronoi.o $(BIN)/boundingBox.o $(BIN)/gHullSerial.o $(BIN)/geometryHelper.o $(BIN)/insertion3D.o $(BIN)/gHull.o $(BIN)/cudaHull.o
+EXEC      = $(BIN)/benchmark
 
 all: $(EXEC)
 
@@ -33,12 +31,9 @@ $(BIN)/%.o: $(LIB)/%.cu makefile
 $(BIN)/%.o: $(SRC)/%.cpp makefile
 	$(CXX) $(CXXFLAGS) -c $(INCPATH) $< -o $@
 
+$(BIN)/%.o: %.cpp makefile
+	$(CXX) $(CXXFLAGS) -c $(INCPATH) $< -o $@
 
-$(BIN)/benchmark: benchmark/benchmark.cpp
-	$(MAKE) -C benchmark
-
-debug: $(EXEC)
-	cuda-gdb --args $(EXEC) $(TEST_ARGS) 
 
 plot: $(EXEC)
 	$(EXEC) > temp.dat 

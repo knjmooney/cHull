@@ -19,5 +19,5 @@
 std::vector< size_t > giftWrap(const CompGeom::Geometry &geom);
 
 // Graham Scan algorithm
-std::vector< size_t > grahamScan(CompGeom::Geometry &geom);
+std::vector< size_t > grahamScan(const CompGeom::Geometry &geom);
 

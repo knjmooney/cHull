@@ -13,6 +13,8 @@
  ******************************************************/
 
 #include <deque>
+#include <list>
+#include <vector>
 
 #include "geometry.hpp"
 #include "point.hpp"
@@ -63,10 +65,10 @@ vector< size_t > giftWrap(const CompGeom::Geometry &geom) {
     }
     dir_of_gift_wrap = geom[nextID] - geom[curID];
     curID = nextID;
-  } while ( cHull[0] != curID );
+  } while ( cHull.front() != curID );
   cHull.push_back ( curID ) ;
 
-  return cHull;
+  return std::vector<size_t>(cHull.begin(),cHull.end());
 }
 
 // Graham Scan algorithm
@@ -82,8 +84,8 @@ vector< size_t > grahamScan(const CompGeom::Geometry &geom_orig) {
   }
 
   // Find average coordinate, set it to be the new origin
-  CompGeom::Point ave = std::accumulate ( geom.begin(), geom.end(), CompGeom::Point({0,0}) );
-  geom.translate( { - ave[0] / float(geom.size()), - ave[1] / float(geom.size()) } );
+  CompGeom::Point aveTimesN = std::accumulate ( geom.begin(), geom.end(), CompGeom::Point({0,0}) );
+  geom.translate( { - aveTimesN[0] / float(geom.size()), - aveTimesN[1] / float(geom.size()) } );
 
   // Initialise index arrays
   vector<size_t> idx(geom.size());

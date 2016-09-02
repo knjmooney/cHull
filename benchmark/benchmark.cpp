@@ -40,17 +40,21 @@ int main() {
 
   for ( auto sz : sizes ) {
     printf ( "%8d ", sz );
-    for ( const auto & func : {giftWrap, grahamScan, cudaHull} ) { 
-      CompGeom::Geometry geom (2);
-      geom.addRandom(sz);
-      timer ( func ( geom ) );
-    }
+    CompGeom::Geometry geom (2);
+    geom.addRandom(sz);
+    timer ( giftWrap (geom) );
 
-    for ( const auto & func : {insertion3D, gHullSerial, gHull} ) { 
-      CompGeom::Geometry geom (3);
-      geom.addRandom(sz);
-      timer ( func ( geom ) );
-    }
+    // for ( const auto & func : {giftWrap, grahamScan, cudaHull} ) { 
+    //   CompGeom::Geometry geom (2);
+    //   geom.addRandom(sz);
+    //   timer ( func ( geom ) );
+    // }
+
+    // for ( const auto & func : {insertion3D, gHullSerial, gHull} ) { 
+    //   CompGeom::Geometry geom (3);
+    //   geom.addRandom(sz);
+    //   timer ( func ( geom ) );
+    // }
     printf("\n");
   }
 

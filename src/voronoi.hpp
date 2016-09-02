@@ -14,6 +14,8 @@
 #include <vector>
 #include <string>
 
+#include "tile.hpp"
+
 typedef std::vector < std::vector < short > > VoronoiRow;
 typedef std::vector < std::vector < std::vector < short > > > Voronoi;
 
@@ -21,4 +23,5 @@ typedef std::vector < std::vector < std::vector < short > > > Voronoi;
 // Creates a portable bitmap file with a Voronoi diagram
 void makeVoronoiPBM( short * V, short * In, size_t w, size_t h, const std::string &filename );
 void makeVoronoiPBM( const Voronoi &V, const std::string &filename );
+void makeVoronoiPBM( const Voronoi &V, const std::string &filename, CompGeom::Tile &T );
 

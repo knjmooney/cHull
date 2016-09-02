@@ -15,6 +15,9 @@
 
 #pragma once
 
+#include <algorithm>
+#include <vector>
+
 #include "errorMessages.hpp"
 #include "point.hpp"
 
@@ -70,9 +73,24 @@ namespace CompGeom {
       std::swap ( _vertices[1], _vertices[2] );
       _norm = - _norm;		// This might be inefficient
     }
+    
   };
 
+  inline bool operator< ( Triangle ti, Triangle tj ) {
+    std::vector<size_t> temp1 = { ti[0], ti[1], ti[2] };
+    std::vector<size_t> temp2 = { tj[0], tj[1], tj[2] };
+    sort ( temp1.begin(), temp1.end() );
+    sort ( temp2.begin(), temp2.end() );
 
+    return temp1 < temp2;
+  }
+
+  inline bool operator== ( Triangle ti, Triangle tj ) {
+    return (ti[0] == tj[0] && ti[1] == tj[1] && ti[2] == tj[2]) || 
+           (ti[0] == tj[1] && ti[1] == tj[2] && ti[2] == tj[0]) ||
+           (ti[0] == tj[2] && ti[1] == tj[0] && ti[2] == tj[1]);
+      
+  }
 }
 
 

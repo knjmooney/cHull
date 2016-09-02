@@ -61,8 +61,12 @@ extern "C" void pba2DDeinitialization();
 // See original paper for the effect of the three parameters: 
 //     phase1Band, phase2Band, phase3Band
 // Parameters must divide textureSize
-extern "C" void pba2DVoronoiDiagram(short *input, short *output, 
-                                    int phase1Band, int phase2Band, int phase3Band);
+extern "C" void pba2DVoronoiDiagram  (short *input, short *output, 
+				      int phase1Band, int phase2Band, int phase3Band);
+
+/* Input and output pointers to device */
+extern "C" void pba2DVoronoiDiagram_d(short *input, short *output, 
+				      int phase1Band, int phase2Band, int phase3Band);
 
 // MARKER is used to mark blank pixels in the texture. 
 // Any uncolored pixels will have x = MARKER. 

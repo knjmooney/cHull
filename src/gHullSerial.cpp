@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <limits>
 #include <list>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -26,6 +27,7 @@
 #include "voronoi.hpp"
 #include "workingSet.hpp"
 #include "star.hpp"
+#include "starHull.hpp"
 
 #include "removeInsert.hpp"
 
@@ -70,7 +72,7 @@ void projectToTile (CompGeom::Tile& T, const CompGeom::Geometry & geom,
     int	idk = int(h*(p[k]-minh)/((maxh-minh)*(1+EPS)));    
 
     float	cmin_val = T.get(idj,idk);
-    float	this_min = fabs(p[i]-ex[i]);
+    float	this_min = fabs(p[i]-ex[dir]);
     if ( cmin_val > this_min ) {
       // if ( p_i == 101 || ( watchj == idj && watchk == idk ) ) {
       // 	cout << dir << " " << p_i << " " << idj << " " << idk <<  endl;
@@ -91,8 +93,7 @@ void projectToBox ( CompGeom::BoundingBox &B, const CompGeom::Geometry &geom ) {
 
   for ( auto dir : Direction::allDirections() ) { 
     projectToTile ( B[dir], geom, extremes, dir );
-  }
-  
+  }  
 }
 
 //////////////////////// Construct Voronois ////////////////////////////////
@@ -179,7 +180,7 @@ void constructVoronois ( CompGeom::BoundingBox & B, vector < Voronoi > &VD) {
   pba2DDeinitialization();
 }
 
-// inner if statement would probably be faster the other way around
+// Finds the dual of the Voronoi diagram
 void findDualEdges ( vector<OrderedEdge> &W, const Tile &T, const Voronoi & V ) {
   int L = T.length();
 
@@ -191,6 +192,8 @@ void findDualEdges ( vector<OrderedEdge> &W, const Tile &T, const Voronoi & V ) 
       for ( auto d : dir ) {
 	int ni = i+d[0];
 	int nj = j+d[1];
+
+	// Check bounds first
 	if ( !(ni < 0 || nj < 0 || ni >= L || nj >= L) 
 	     && V[ni][nj] != V[i][j] ) 
 	  {
@@ -221,6 +224,12 @@ void constructWorkingSets ( vector<WorkingSet> & W,
   sort(Vedges.begin(),Vedges.end());
   auto it = unique(Vedges.begin(),Vedges.end());
   Vedges.resize ( distance ( Vedges.begin(), it ), OrderedEdge(-1,-1) );
+
+  // cout << "====== SERIAL ======\n";
+  // cout << "Serial Size : " << Vedges.size() << endl;
+  // for ( auto edge : Vedges ) {
+  //   cout << edge.first << " " << edge.second << endl;
+  // }
 
   // Construct the vector of Working Sets
   size_t curr_index = 0;
@@ -255,92 +264,106 @@ void delete_visible_forwards ( list<Triangle> &Star, const CompGeom::Point &p) {
   Star.erase(Star.begin(),it);
 }
 
+// Rethink checking the start is at the end, initial if statement
+template <typename iter>
+iter findNextVisible    (iter start,iter end,const size_t &star_id, const size_t &id,const Geometry & geom) {
+  iter second = start;
+  advance(second,1);
+  const Point &p = geom[id];
+  for ( ; start != end && second != end; ++start, ++second ) {
+    Triangle tri ( star_id, *start, *second, geom );
+    if ( tri.isVisible(p) )
+      return start;
+  }
+  return end;
+}
 
-WorkingSet constructStar_h ( const WorkingSet & W, const CompGeom::Geometry &geom ) {
+// Rethink checking the start is at the end, initial if statement
+template <typename iter>
+iter findNextNotVisible    (iter start,iter end,const size_t &star_id, const size_t &id,const Geometry & geom) {
+  iter second = start;
+  advance(second,1);
+  const Point &p = geom[id];
+  for ( ; start != end && second != end ; ++start, ++second ) {
+    Triangle tri ( star_id, *start, *second, geom );
+    if ( !tri.isVisible(p) )
+      return start;
+  }
+  return end;
+}
+
+Star constructStar_h ( const WorkingSet & W, const CompGeom::Geometry &geom ) {
   if ( W.size() < 3 ) errorM("Working Set does not have enough edges");
 
   Star tstar(W[0].first);
   Triangle t0( tstar.id , W[0].second, W[1].second, geom );
 
-  auto id = W[2].second;
-  if ( t0.isVisible(geom[id]) ) {
+  auto tid = W[2].second;	// temp id
+  if ( t0.isVisible(geom[tid]) ) {
     t0.invert();
   }
 
   tstar.insert( tstar.end(), t0[1] );
   tstar.insert( tstar.end(), t0[2] );
-  tstar.insert( tstar.end(), id    );
+  tstar.insert( tstar.end(), tid    );
 
   auto it = W.begin();
-  for ( advance(it,4); it!=W.end(); it++ ) {
-    const auto &pid = it->second;
+  for ( advance(it,3); it!=W.end(); it++ ) {
+    const auto &pid = it->second; // point id
     const auto &p  = geom[pid];
-    size_t to,from;
-
+    
+    // If the edge from the back to the front of the list is visible
     Triangle tri(tstar.id,tstar.back(),tstar.front(),geom);
-    if ( tri.isVisible(p) ) {
-
-      // Find first instance it's not visible
-      for ( size_t i=0; i<tstar.size()-1; i++ ) {
-	tri = Triangle ( tstar.id, tstar[i], tstar[i+1], geom );
-	if ( !tri.isVisible(p) ) {
-	  to = i;
-	  break;
-	}
+    if ( tri.isVisible(p) ) {      
+      Star::iterator to   = findNextNotVisible (tstar.begin(), tstar.end(), tstar.id, pid, geom);
+      to = tstar.erase(tstar.begin(),to);
+      if ( tstar.empty() ) {	// If all edges are visible then the star is dead
+	break;
       }
 
-      // Find next instance it's visible
-      for ( size_t i=to; i<tstar.size()-1; i++ ) {
-	tri = Triangle ( tstar.id, tstar[i], tstar[i+1], geom );
-	if ( tri.isVisible(p) ) {
-	  from = i;
-	  break;
-	}
+      Star::iterator from = findNextVisible    (to           , tstar.end(), tstar.id, pid, geom);
+      if ( from != tstar.end() ) {     // If there's nothing to delete
+	advance(from,1);	       // don't delete the first vertex
+	tstar.erase(from,tstar.end()); // be careful if to and from overlap (should be impossible)
       }
-    } 
-
-    else {
-      // Find first instance it's not visible
-      for ( size_t i=0; i<tstar.size()-1; i++ ) {
-	tri = Triangle ( tstar.id, tstar[i], tstar[i+1], geom );
-	if ( tri.isVisible(p) ) {
-	  from = i;
-	  break;
-	}
-      }
-
-      // Find next instance it's visible
-      for ( size_t i=from; i<tstar.size()-1; i++ ) {
-	tri = Triangle ( tstar.id, tstar[i], tstar[i+1], geom );
-	if ( !tri.isVisible(p) ) {
-	  to = i;
-	  break;
-	}
-      }      
+      tstar.insert(tstar.end(),pid);
     }
+    else {
+      Star::iterator from = findNextVisible    (tstar.begin(),tstar.end(), tstar.id, pid, geom);
+      Star::iterator to   = findNextNotVisible (from         ,tstar.end(), tstar.id, pid, geom);
+      if ( from == tstar.end() ) continue;			   // If there's nothing to delete
 
-    if (from != to ) {
-      removeInsert ( tstar.edges, pid, from, to );
+      advance(from,1);		    // don't delete the first vertex
+      to = tstar.erase ( from,to ); // be careful if from==to (I don't think this happens)
+      tstar.insert(to,pid);
     }
   }
 
   // ch.print ( "data/test.dat" );
-  return WorkingSet(0,OrderedEdge(-1,-1));
+  return tstar;
 }
 
-void constructStars   ( vector < WorkingSet >& S, 
+
+void constructStars   ( vector < Star >& S, 
 			const vector < WorkingSet > &W, 
 			const CompGeom::Geometry &geom ) 
 {
+  // StarHull shull(geom);
   for ( auto& wset : W ) {
     // try { 
-    S.push_back(constructStar_h ( wset, geom ));
+    Star tstar = constructStar_h ( wset, geom );
+    if ( !tstar.empty() ) {
+      S.push_back(tstar);
+    }
+    // shull.update(S.begin(),S.end());
+    
     // } catch( std::logic_error &e ) {
     //   cout << __LINE__ << " " << e.what() << endl;
     //   for ( auto ei : wset ) 
     // 	cout << ei.first <<" " << ei.second << endl;
     // }
   }
+  // shull.print("test_starset.txt");
 }
 
 vector < vector < size_t > > gHullSerial ( const CompGeom::Geometry &geom ) {
@@ -349,16 +372,21 @@ vector < vector < size_t > > gHullSerial ( const CompGeom::Geometry &geom ) {
 
   CompGeom::BoundingBox  B  (BOXSIZE );
   vector < Voronoi     > V  (DIM    ,Voronoi(BOXSIZE, VoronoiRow(BOXSIZE, vector < short > (2) ) ) );
-  vector < WorkingSet  > W, S; 
+  vector < WorkingSet  > W; 
+  vector < Star        > S;
 
   projectToBox         ( B, geom    );
   constructVoronois    ( B, V       );
   constructWorkingSets ( W, B, V    );
   constructStars       ( S, W, geom );
 
-  makeVoronoiPBM(V[0],"images/test1.pbm");
-  makeVoronoiPBM(V[1],"images/test2.pbm");
-  makeVoronoiPBM(V[2],"images/test3.pbm");
+  // makeVoronoiPBM(V[Direction::LEFT],"images/voronoi_left.pbm" ,B[Direction::LEFT ]);
+  // makeVoronoiPBM(V[Direction::BACK],"images/voronoi_back.pbm" ,B[Direction::BACK ]);
+  // makeVoronoiPBM(V[Direction::DOWN],"images/voronoi_down.pbm" ,B[Direction::DOWN ]);
+  // makeVoronoiPBM(V[Direction::LEFT],"images/voronoi_right.pbm",B[Direction::RIGHT]);
+  // makeVoronoiPBM(V[Direction::BACK],"images/voronoi_front.pbm",B[Direction::FRONT]);
+  // makeVoronoiPBM(V[Direction::DOWN],"images/voronoi_up.pbm"   ,B[Direction::UP   ]);
+
   
   return vector < vector < size_t > > ( 1,{0,1,2} );
 }

@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <vector>
 
 #include "wvtest.h"
 #include "../src/point.hpp"
@@ -11,18 +12,20 @@
 #include "../src/unorderedEdge.hpp"
 #include "../src/orderedEdge.hpp"
 #include "../src/convexHull2D.hpp"
-#include "../src/convexHull3D.hpp"
+#include "../src/insertion3D.hpp"
 #include "../src/tile.hpp"
 #include "../src/boundingBox.hpp"
+#include "../src/workingSet.hpp"
+
+#include "gHullSerial.hpp"
+#include "geometryHelper.hpp"
+#include "star.hpp"
 
 #define EPS 0.00001f
 #define WVPASSNEAR(a,b) WVPASS ( fabs(a-b) < fabs(a)*EPS + EPS )
 
 using std::cout;
 using std::endl;
-
-// Prototype helper functions for testing
-void projectToTile ( CompGeom::BoundingBox &B, const CompGeom::Geometry &geom );
 
 
 WVTEST_MAIN("wvtest tests")
@@ -150,7 +153,7 @@ WVTEST_MAIN("Graham Scan") {
 // NEED TO REVISIT!!!
 WVTEST_MAIN("Compare 2D algorithms") {
   CompGeom::Geometry geom{2};
-  geom.addRandom(100000);	// This fails for >200,000
+  geom.addRandom(10000);	// This fails for >200,000
 
   std::vector < size_t > result1 = giftWrap  (geom);
   std::vector < size_t > result2 = grahamScan(geom);
@@ -181,51 +184,11 @@ WVTEST_MAIN("3D Insertion Method") {
   WVPASS ( result == std::vector<size_t> ( { 1,2,3,4,5,6 } ) );
 }
 
-WVTEST_MAIN("Tile") {
-  CompGeom::Tile T( 32, 32 );
-
-  T.set(0,0,1.1);
-  WVPASSNEAR(T.get(0,0),1.1);
-  WVPASS ( T.width() == 32 );
-  WVPASS ( T.height() == 32 );
-  
-
-  bool failure = false;
-  try {
-    T.set(33,1,0.9);
-  } catch ( std::out_of_range ) {
-    failure = true;
-  }
-  WVPASS ( failure );
-
-  T.set ( 31,31,0.9 );
-  WVPASSNEAR ( T.get(31,31), 0.9 );
-
-  CompGeom::Tile T_off( 32, 10 );
-  T_off.set ( 31,9,0.9 );
-  WVPASSNEAR ( T_off.get(31,9), 0.9 );
-}
-
-WVTEST_MAIN("Bounding Box") {
-
-  CompGeom::Geometry geom { {0,0,0}, {0,-1,0}, {1,0,0}, {0,0,1}, {-1,0,0},
-                            {0,1,0}, {0,0,-1} };
-  CompGeom::BoundingBox B(32,32);
-  CompGeom::Tile *T = B.up();
-
-  projectToTile(B,geom);
-  
-  cout << T->get(15,15) << endl;
-  WVPASSNEAR(T->get(15,15), 0 );
-}
- 
 WVTEST_MAIN("gHull Serial") {
   CompGeom::Geometry geom { {0,0,0}, {0,-1,0}, {1,0,0}, {0,0,1}, {-1,0,0},
                             {0,1,0}, {0,0,-1} };
-
   auto tris = gHullSerial ( geom );  
-
-
+  cout << 1 << endl;
   std::vector<size_t> result;
   for ( auto&& t : tris ) {
     cout << t[0] << endl;
@@ -239,3 +202,19 @@ WVTEST_MAIN("gHull Serial") {
   // WVPASS ( result == std::vector<size_t> ( { 1,2,3,4,5,6 } ) );
 }
 
+
+CompGeom::Star constructStar_h ( const CompGeom::WorkingSet & W, const CompGeom::Geometry &geom );
+
+WVTEST_MAIN("Constructing Stars") {
+  CompGeom::Geometry geom =  { {0,0,0}, {0,-1,0}, {1,0,0}, {0,0,1}, {-1,0,0},
+			       {0,1,0}, {0,0,-1}, {0,0,0}, {2,0,0}, {0,0,2}, {-2,0,0},
+			       {0,2,0}, {0,0,-2}, {-2,0,2}, {0,0,3} };
+  CompGeom::WorkingSet W = { { 1,0}, {1,2}, {1,3}, {1,4}, {1,5}, {1,6}, {1,7},{1,8},{1,9},{1,10},{1,11},{1,12},{1,13},{1,14} };
+  CompGeom::Star S = constructStar_h ( W, geom );
+  
+  cout << S.id << endl;
+  for ( auto s : S ) cout << s << " ";
+  cout << endl;
+
+  WVPASS ( std::vector < size_t > ( S.begin(), S.end() ) == std::vector< size_t > ({8,14,13,10,12}) );
+}

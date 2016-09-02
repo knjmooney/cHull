@@ -25,7 +25,7 @@ namespace CompGeom {
     const size_t	   _length;
 
     float  maxfloat() const { return std::numeric_limits<float>::max(); }
-    size_t maxID()    const { return -1; }
+    size_t maxID()    const { return std::numeric_limits<size_t>::max(); }
     size_t index(const size_t &i, const size_t &j) const {return j + i*_length;}
 
   public:

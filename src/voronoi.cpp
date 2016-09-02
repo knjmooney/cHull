@@ -13,6 +13,7 @@
 #include <set>
 
 #include "pba2D.h"
+#include "tile.hpp"
 #include "voronoi.hpp"
 
 using namespace std;
@@ -88,5 +89,30 @@ void makeVoronoiPBM( const Voronoi &V, const string &filename ) {
   }
   cout << cols.size() << endl;
   fclose(fp);
+}
+
+
+void makeVoronoiPBM( const Voronoi &V, const string &filename, CompGeom::Tile &T) {  
+  FILE *fp = fopen(filename.c_str(), "wb"); /* b - binary mode */
+  fprintf(fp, "P6\n%lu %lu\n255\n", V.size(), V.size());
+  std::set<int> cols;
+  for ( auto row : V ) {
+    for ( auto p : row ) {
+      vector < unsigned char > colour(4,0);
+      srand48(T.getID(p[1],p[0]));
+      // cout << T.getID(p[1],p[0]) << " ";
+      // int base = rand();
+      colour[0] = drand48()*256;
+      colour[1] = drand48()*256;
+      colour[2] = drand48()*256;
+      (void) fwrite(&colour[0], 1, 3*sizeof(unsigned char), fp);
+      int base = *(int *)&colour[0];
+      cols.insert(base);
+    }
+    // cout << endl;
+  }
+  cout << cols.size() << endl;
+  fclose(fp);
+  // cout << endl << endl;
 }
 

@@ -71,7 +71,9 @@ vector< size_t > giftWrap(const CompGeom::Geometry &geom) {
 
 // Graham Scan algorithm
 // The last loop is buggy
-vector< size_t > grahamScan(CompGeom::Geometry &geom) {
+vector< size_t > grahamScan(const CompGeom::Geometry &geom_orig) {
+  CompGeom::Geometry geom = geom_orig;
+
   if ( geom.getDim() != 2 ) {    
     errorM("Can only graham scan 2D geometries\n");
   }  

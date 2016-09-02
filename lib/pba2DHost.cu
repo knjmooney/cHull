@@ -49,7 +49,7 @@ DAMAGE.
 // Parameters for CUDA kernel executions
 #define BLOCKX		16
 #define BLOCKY		16
-#define BLOCKSIZE	64
+#define BLOCKSIZE	128
 #define TILE_DIM	32
 #define BLOCK_ROWS	8
 

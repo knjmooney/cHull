@@ -54,6 +54,7 @@ namespace CompGeom {
     friend std::ostream& operator<<(std::ostream& os, const Point &p);
     friend Point operator- ( const Point &p );
     friend Point operator- ( const Point &p1, const Point &p2 );
+    friend Point operator+ ( const Point &p1, const Point &p2 );
     friend bool  operator==( const Point &p1, const Point &p2 );
     friend bool  operator!=( const Point &p1, const Point &p2 );
     friend float operator* ( const Point &p1, const Point &p2 );
@@ -94,6 +95,14 @@ namespace CompGeom {
     }
     return p_inv;
   }
+
+  inline Point operator+ ( const Point &p1, const Point &p2 ) {
+    Point p_diff(p1);
+    std::transform ( p_diff.begin(), p_diff.end(), p2.begin(),
+		     p_diff.begin(), std::plus<float>() );
+    return p_diff;
+  }
+
 
   inline bool operator==( const Point &p1, const Point &p2 ) {
     if ( p1.size() != p2.size() ) return false;

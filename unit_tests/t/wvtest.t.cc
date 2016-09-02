@@ -17,6 +17,7 @@
 #include "../src/boundingBox.hpp"
 #include "../src/workingSet.hpp"
 
+#include "cudaHull.hpp"
 #include "gHullSerial.hpp"
 #include "geometryHelper.hpp"
 #include "star.hpp"
@@ -153,17 +154,21 @@ WVTEST_MAIN("Graham Scan") {
 // NEED TO REVISIT!!!
 WVTEST_MAIN("Compare 2D algorithms") {
   CompGeom::Geometry geom{2};
-  geom.addRandom(10000);	// This fails for >200,000
+  geom.addRandom(100000);	// This fails for >200,000
 
   std::vector < size_t > result1 = giftWrap  (geom);
   std::vector < size_t > result2 = grahamScan(geom);
+  std::vector < size_t > result3 = cudaHull  (geom);
 
   result1.pop_back(); 		// remove repeated index
   std::sort(result1.begin(),result1.end());
   result2.pop_back(); 		// remove repeated index
   std::sort(result2.begin(),result2.end());
+  result3.pop_back(); 		// remove repeated index
+  std::sort(result3.begin(),result3.end());
 
   WVPASS ( result1 == result2 );
+  WVPASS ( result1 == result3 );
 }
 
 

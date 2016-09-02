@@ -71,40 +71,6 @@ struct downwardFacing : public thrust::unary_function<id_coord_rotation_tuple,bo
   }
 };
 
-// Not needed anymore, only for reference
-// functor for adding float2s
-struct add_float2 : public thrust::binary_function<float2,float2,float2> { 
-  __host__ __device__
-  float2 operator()(const float2 &a, const float2 &b) {
-    float2 r;
-    r.x = a.x + b.x;
-    r.y = a.y + b.y;
-    return r;
-  }
-};
-
-// functor for shifting a float2
-struct shift_float2 : public thrust::unary_function<float2,void> { 
-  float2 shift;
-  shift_float2( const float2 &_shift ) {
-    shift.x = _shift.x;
-    shift.y = _shift.y;
-  }
-
-  __host__ __device__
-  void operator()( float2 &a ) {
-    a.x -= shift.x;
-    a.y -= shift.y;
-  }
-};
-
-struct angle_float2 : public thrust::unary_function<float2,float> {
-  __host__ __device__
-  float operator() ( const float2 &a ) {
-    return atan2 ( a.y, a.x );
-  }
-};
-
 std::vector< size_t > cudaHull ( const CompGeom::Geometry &geom ) {
 
   // Transfer geometry to host vector
@@ -119,37 +85,29 @@ std::vector< size_t > cudaHull ( const CompGeom::Geometry &geom ) {
   thrust::device_vector<float> d_xvec = h_xvec;
   thrust::device_vector<float> d_yvec = h_yvec;
 
-  // Fill an array of IDS on device
+  // Fill an array of IDS on device and sort them along with the points
+  // by their x-coordinate
   thrust::device_vector<int> ids(d_xvec.size());
   thrust::sequence(ids.begin(),ids.end());
 
-  // Find average coordinate to be new origin
-  float avex, avey;
-  avex = thrust::reduce ( d_xvec.begin(), d_xvec.end() ) / d_xvec.size();
-  avey = thrust::reduce ( d_yvec.begin(), d_yvec.end() ) / d_yvec.size();
-
-  // Make constant iterators with the shift value
-  thrust::constant_iterator<int> shift_x(avex);
-  thrust::constant_iterator<int> shift_y(avey);
-
-  // // translate through average coordinate making it the new origin
-  thrust::transform ( d_xvec.begin(), d_xvec.end(), shift_x, d_xvec.begin(), thrust::plus<float>() );
-  thrust::transform ( d_yvec.begin(), d_yvec.end(), shift_y, d_yvec.begin(), thrust::plus<float>() );
-
   // Zip IDS and coordinates
-  auto zip_start = make_zip_iterator(make_tuple(ids.begin(), 
-  					    d_xvec.begin(),
-					    d_yvec.begin()));
-  auto zip_end   = make_zip_iterator(make_tuple(ids.end(), 
-  					    d_xvec.end(),
-					    d_yvec.end()));
-  // Sort by x-coordinate
-  thrust::sort(zip_start, zip_end, compareX());
+  // auto zip_start = make_zip_iterator(make_tuple(ids.begin(), 
+  // 						d_xvec.begin(),
+  // 						d_yvec.begin()));
+  // auto zip_end   = make_zip_iterator(make_tuple(ids.end(), 
+  // 						d_xvec.end(),
+  // 						d_yvec.end()));
+  //  Sort by x-coordinate
+  // thrust::sort(zip_start, zip_end, compareX());
+  // This sped it up significantly
+  thrust::sort_by_key(d_xvec.begin(),
+  		      d_xvec.end(),
+  		      make_zip_iterator(make_tuple(ids.begin(), d_yvec.begin()) ) );
 
   // Copy ids and vectors into lower chain
-  thrust::device_vector<int> lower_ids(ids.begin()   ,ids.end()   );
-  thrust::device_vector<float> lower_x(d_xvec.begin(),d_xvec.end());
-  thrust::device_vector<float> lower_y(d_yvec.begin(),d_yvec.end());
+  thrust::device_vector<int>   lower_ids(ids.begin()   ,ids.end()   );
+  thrust::device_vector<float> lower_x  (d_xvec.begin(),d_xvec.end());
+  thrust::device_vector<float> lower_y  (d_yvec.begin(),d_yvec.end());
 
   // Calculate the vectors between each point
   thrust::device_vector<float> vdiff_x(ids.size());
@@ -180,7 +138,7 @@ std::vector< size_t > cudaHull ( const CompGeom::Geometry &geom ) {
   // auto a = new_end.get_iterator_tuple();
 
   int old_N = 0;
-  int N = thrust::distance (four_tuple_start, new_end );
+  int N     = thrust::distance (four_tuple_start, new_end );
   
   while ( old_N != N ) {
     thrust::adjacent_difference(d_xvec.begin(),d_xvec.begin() + N ,vdiff_x.begin());
@@ -202,11 +160,6 @@ std::vector< size_t > cudaHull ( const CompGeom::Geometry &geom ) {
 						      lower_x.end(),
 						      lower_y.end(),
 						      upper_convex.end()));
-  
-  // four_tuple_start = make_zip_iterator ( make_tuple ( ids.begin(),
-  // 							   d_xvec.begin(),
-  // 							   d_yvec.begin(),
-  // 							   upper_convex.begin()));
 
   // LOWER CHAIN
   thrust::adjacent_difference(lower_x.begin(),lower_x.end(),vdiff_x.begin());
@@ -230,31 +183,10 @@ std::vector< size_t > cudaHull ( const CompGeom::Geometry &geom ) {
     N = thrust::distance (four_tuple_start, new_end );
   }
 
-  // for ( size_t i=0; i<upper_N; i++ ) {
-  //   std::cout << ids[i] << std::endl; 
-  // }
-  // for ( size_t i=N-1; i--; ) {
-  //   std::cout << lower_ids[i] << std::endl; 
-  // }  
-
-  // std::cout << *(new_end.get<0>()) << std::endl;
-
-  // auto lower_start = make_zip_iterator(make_tuple(lower_ids.begin(), 
-  // 					    lower_x.begin(),
-  // 					    lower_y.begin()));
-  // auto lower_end   = make_zip_iterator(make_tuple(ids.end(), 
-  // 					    lower_x.end(),
-  // 					    lower_y.end()));  
-
-  // Copy back to host
+  // Copy back to host and return
   std::vector< size_t > result (N + upper_N - 1);
   thrust::copy(ids.begin(), ids.begin()+upper_N, result.begin());
   thrust::copy(lower_ids.rend()-N + 1, lower_ids.rend(), result.begin()+upper_N);
-  // for ( size_t i=0; i<ids.size(); i++ ) {
-  //   std::cout << ids[i] << " " << d_xvec[i] << " " << d_yvec[i] << "\t";
-  //   std::cout << lower_ids[i] << " " << lower_x[i] << " " << lower_y[i] << "\t" 
-  // 	      << vdiff_x[i] << " " << vdiff_y[i] << " " << upper_convex[i] <<  std::endl;
-  // }
-  // To surpress compiler warnings, not a legitimate strategy
+
   return result;
 }

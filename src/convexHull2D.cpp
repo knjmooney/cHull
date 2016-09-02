@@ -29,9 +29,9 @@ vector< size_t > giftWrap(const CompGeom::Geometry &geom) {
     errorM("Need more than 2 points to gift wrap\n");
   }
  
-  // Fill a vector of indeces
+  // Fill a vector of indices
   vector<size_t> idx(geom.size());
-  for (size_t i = 0; i != idx.size(); ++i) idx[i] = i;
+  iota ( idx.begin(), idx.end(), 0 );
 
   // Find index of point furthest to left
   size_t nextID = -1;
@@ -80,24 +80,12 @@ vector< size_t > grahamScan(const CompGeom::Geometry &geom_orig) {
   }
 
   // Find average coordinate, set it to be the new origin
-  float avex = 0, avey = 0;
-  for ( auto p : geom ) {
-    avex += p[0];
-    avey += p[1];
-  }
-  // // Alternative method using stl
-  // std::accumulate ( geom.begin(), geom.end(), avex, 
-  // 		    [] (int x, CompGeom::Point y) { return x + y[0]; } );
-  // std::accumulate ( geom.begin(), geom.end(), avey, 
-  // 		    [] (int x, CompGeom::Point y) { return x + y[1]; } );
-  avex /= float(geom.size());
-  avey /= float(geom.size());
-  geom.translate({-avex,-avey});
-
+  CompGeom::Point ave = std::accumulate ( geom.begin(), geom.end(), CompGeom::Point({0,0}) );
+  geom.translate( { - ave[0] / float(geom.size()), - ave[1] / float(geom.size()) } );
 
   // Initialise index arrays
   vector<size_t> idx(geom.size());
-  for (size_t i = 0; i != idx.size(); ++i) idx[i] = i;
+  iota ( idx.begin(), idx.end(), 0 );
 
   // Fill angles with the angle each line op
   // makes with the x-axis, from [-pi,pi]

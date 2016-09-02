@@ -4,9 +4,9 @@ NVCC   = nvcc
 LINKER = nvcc
 
 PROF      = 
-CFLAGS    = -g $(PROF) --std=c++11 -O2 
-CXXFLAGS  = -pedantic -W -Wall -Wextra --std=c++11 $(CFLAGS)
-NVCCFLAGS = -G --use_fast_math -arch=sm_35 -dc $(CFLAGS)
+CFLAGS    =  $(PROF) --std=c++11 -O2 
+CXXFLAGS  = -pedantic -W -Wall -Wextra $(CFLAGS)
+NVCCFLAGS = -lineinfo --use_fast_math -arch=sm_35 -dc $(CFLAGS)
 LDFLAGS   = -lcudadevrt
 
 LIB       = ./lib

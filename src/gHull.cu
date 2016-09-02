@@ -389,9 +389,9 @@ void constructVoronois_d( dvec<int> &firsts, dvec<int> &seconds, Face *face ) {
     // Don't know what the last three numbers do
     pba2DVoronoiDiagram_d(input_p,output_p,P1B,P2B,P3B); 
 
-    hvec<short> input_h = input, output_h = output[i];
-    makeVoronoiPBM ( &output_h[0], &input_h[0], RES,RES, 
-		     "parallel" + std::to_string(i) + ".pbm" );
+    // hvec<short> input_h = input, output_h = output[i];
+    // makeVoronoiPBM ( &output_h[0], &input_h[0], RES,RES, 
+    // 		     "parallel" + std::to_string(i) + ".pbm" );
   }
 
   // Free PBA memory
@@ -510,7 +510,16 @@ float3 operator-(float3 a, float3 b) {
 __device__
 inline float3 norm ( float3 tri[3] ) {
   float3 a = tri[1] - tri[0], b = tri[2] - tri[0]; 
-  return make_float3 ( a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.y, a.x*b.y - a.y*b.x );
+  return make_float3 ( a.y*b.z - a.z*b.y, 
+		       a.z*b.x - a.x*b.y, 
+		       a.x*b.y - a.y*b.x );
+}
+
+__device__
+inline float3 average ( float3 tri[3], float3 p ) {
+  return make_float3 ( tri[0].x + tri[1].x + tri[2].x,
+		       tri[0].y + tri[1].y + tri[2].y,
+		       tri[0].z + tri[1].z + tri[2].z );
 }
 
 // Determines if p is visible to tri

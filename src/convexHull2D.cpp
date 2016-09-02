@@ -37,7 +37,9 @@ vector< size_t > giftWrap(const CompGeom::Geometry &geom) {
   size_t nextID = -1;
   size_t curID  = *min_element ( idx.begin(), idx.end(), 
 				 [&geom] ( size_t i, size_t j ) 
-				 { return geom[i][0] < geom[j][0]; } );
+				 {
+				   return geom[i][0] < geom[j][0];
+				 } );
 
   CompGeom::Point dir_of_gift_wrap {{ 0,1 }};
   CompGeom::Point dir_to_point     {{ 0,0 }};

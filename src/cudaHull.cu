@@ -97,7 +97,7 @@ std::vector< size_t > cudaHull ( const CompGeom::Geometry &geom ) {
   // auto zip_end   = make_zip_iterator(make_tuple(ids.end(), 
   // 						d_xvec.end(),
   // 						d_yvec.end()));
-  //  Sort by x-coordinate
+  // // Sort by x-coordinate
   // thrust::sort(zip_start, zip_end, compareX());
   // This sped it up significantly
   thrust::sort_by_key(d_xvec.begin(),
@@ -117,8 +117,7 @@ std::vector< size_t > cudaHull ( const CompGeom::Geometry &geom ) {
 
   // Determine if the angle between consecutive vectors is convex up
   // End vectors are always true
-  thrust::device_vector<bool> upper_convex(ids.size());
-  thrust::fill(upper_convex.begin(),upper_convex.end(),true);
+  thrust::device_vector<bool> upper_convex(ids.size(),true);
   auto diff_start = make_zip_iterator ( make_tuple ( vdiff_x.begin(), vdiff_y.begin() ) );
   auto diff_end   = make_zip_iterator ( make_tuple ( vdiff_x.end()  , vdiff_y.end()   ) );  
   thrust::transform ( diff_start+2, diff_end, diff_start+1, upper_convex.begin()+1, rotation() );

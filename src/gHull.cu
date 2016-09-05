@@ -516,20 +516,24 @@ inline float3 norm ( float3 tri[3] ) {
 }
 
 __device__
-inline float3 average ( float3 tri[3], float3 p ) {
-  return make_float3 ( tri[0].x + tri[1].x + tri[2].x,
-		       tri[0].y + tri[1].y + tri[2].y,
-		       tri[0].z + tri[1].z + tri[2].z );
+inline float3 average ( float3 tri[3] ) {
+  return make_float3 ( (tri[0].x + tri[1].x + tri[2].x)/3.0f,
+		       (tri[0].y + tri[1].y + tri[2].y)/3.0f,
+		       (tri[0].z + tri[1].z + tri[2].z)/3.0f );
+}
+
+__device__
+inline float dot_d ( float3 p, float3 q ) {
+  return p.x*q.x + p.y*q.y + p.z*q.z ;
 }
 
 // Determines if p is visible to tri
 __device__
 inline bool isVisible (float3 tri[3], float3 p) {
   float3 n   = norm ( tri );
-  // float3 com = average(tri);
-  // float3 v = com - p;
-  // dot product
-  return true;
+  float3 com = average(tri);
+  float3 q = com - p;
+  return dot_d(q,n) < 0;
 }
 
 __global__
@@ -555,7 +559,6 @@ void constructStars_Kernel ( Stars *stars,
 
     if ( isVisible ( tri, p ) ) 
       ;; //Then invert
-
   }
 }
 
@@ -579,12 +582,18 @@ static void constructStars_d ( Stars *stars_d,
 
 std::vector < std::vector < size_t > > gHull ( const CompGeom::Geometry &geom ) {
 
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+
   // chooseCudaCard(0);
   gpuErrchk ( cudaGetLastError() );
 
-  size_t N = geom.size();
+  const size_t &N = geom.size();
 
   /////////////////////////////// INIT POINTS ON DEVICE /////////////////////////////////
+
+  cudaEventRecord(start);
   
   // Fill three 1d arrys with the geometry
   hvec<float> px_h(N), py_h(N), pz_h(N);
@@ -638,14 +647,29 @@ std::vector < std::vector < size_t > > gHull ( const CompGeom::Geometry &geom ) 
 				 thrust::raw_pointer_cast(&extrm_d[0]), 
 				 N );
 
+  cudaEventRecord(stop);
+  cudaEventSynchronize(stop);
+  float milliseconds = 0;
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  cout << milliseconds << "\t";
   ////////////////////////////////// CONSTRUCT VORONOIS //////////////////////////
+
+  cudaEventRecord(start);
 
   // This actually finds all the edges
   dvec< int > firsts;
   dvec< int > seconds;
   constructVoronois_d ( firsts,seconds,face_d );
 
+  cudaEventRecord(stop);
+  cudaEventSynchronize(stop);
+  milliseconds = 0;
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  cout << milliseconds << "\t";
   ////////////////////////////////// MAKE STARS //////////////////////////
+
+  cudaEventRecord(start);
+
 
   dvec<int> star_ids   ( N                );
   dvec<int> star_sizes ( firsts.size() ,1 );
@@ -681,6 +705,13 @@ std::vector < std::vector < size_t > > gHull ( const CompGeom::Geometry &geom ) 
   cudaMemcpy ( stars_d, &stars_h, sizeof(Stars), cudaMemcpyHostToDevice );
 
   constructStars_d ( stars_d, seconds, scnds_offsets, points_d );
+
+  cudaEventRecord(stop);
+  cudaEventSynchronize(stop);
+  milliseconds = 0;
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  cout << milliseconds << "\t";
+
   
   ////////////////////////////////// DEBUGGING   /////////////////////////////////
   

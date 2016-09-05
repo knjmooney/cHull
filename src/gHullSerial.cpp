@@ -10,6 +10,7 @@
  ******************************************************/
 
 #include <algorithm>
+#include <chrono>
 #include <limits>
 #include <list>
 #include <set>
@@ -307,6 +308,8 @@ Star constructStar_h ( const WorkingSet & W, const CompGeom::Geometry &geom ) {
   tstar.insert( tstar.end(), t0[2] );
   tstar.insert( tstar.end(), tid    );
 
+  ConvexHull3D ch(geom);
+
   auto it = W.begin();
   for ( advance(it,3); it!=W.end(); it++ ) {
     const auto &pid = it->second; // point id
@@ -337,9 +340,15 @@ Star constructStar_h ( const WorkingSet & W, const CompGeom::Geometry &geom ) {
       to = tstar.erase ( from,to ); // be careful if from==to (I don't think this happens)
       tstar.insert(to,pid);
     }
+    vector < Triangle > tt;
+    for ( size_t i=0; i<tstar.size()-1; i++ ) {
+      tt.push_back ( Triangle ( tstar.id, tstar[i], tstar[i+1], geom ) );
+    }
+    tt.push_back ( Triangle ( tstar.id, tstar.back(), tstar.front(), geom ) );
+    ch.update (tt.begin(),tt.end() );
   }
 
-  // ch.print ( "data/test.dat" );
+  ch.print ( "initialStar.txt" );
   return tstar;
 }
 
@@ -374,6 +383,7 @@ vector < vector < size_t > > gHullSerial ( const CompGeom::Geometry &geom ) {
   vector < Voronoi     > V  (DIM    ,Voronoi(BOXSIZE, VoronoiRow(BOXSIZE, vector < short > (2) ) ) );
   vector < WorkingSet  > W; 
   vector < Star        > S;
+
 
   projectToBox         ( B, geom    );
   constructVoronois    ( B, V       );

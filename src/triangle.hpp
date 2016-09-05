@@ -45,7 +45,9 @@ namespace CompGeom {
       			(p0[2] + p1[2] + p2[2])/3 } };
 
       Point x ( p1 - p0 ), y ( p2 - p0 );
-      _norm = Point { { x[1]*y[2] - x[2]*y[1], x[2]*y[0] - x[0]*y[2], x[0]*y[1] - x[1]*y[0] } };
+      _norm = Point { { x[1]*y[2] - x[2]*y[1], 
+			x[2]*y[0] - x[0]*y[2], 
+			x[0]*y[1] - x[1]*y[0] } };
     }
     ~Triangle() {}
     

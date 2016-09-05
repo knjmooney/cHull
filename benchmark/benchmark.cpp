@@ -28,11 +28,16 @@ using namespace std;
 int main() {
   
 
-  vector < int > sizes(10);
-  generate(sizes.begin(),sizes.end(),[] () {
-      static int range_min = 0, range_step = 1e6;
+  vector < int > sizes(200);
+  generate(sizes.begin(),sizes.begin()+100,[] () {
+      static int range_min = 0, range_step = 1e5;
       return (range_min += range_step);
     });
+  generate(sizes.begin()+100,sizes.end(),[] () {
+      static int range_min = 1e6, range_step = 1e6;
+      return (range_min += range_step);
+    });
+
    
   printf ( "%-8s %15s %15s %15s %15s %15s %15s\n",
 	   "","Gift Wrap", "Graham Scan", "Monotone Chains",
@@ -40,22 +45,24 @@ int main() {
 
   for ( auto sz : sizes ) {
     printf ( "%8d ", sz );
-    CompGeom::Geometry geom (2);
+    CompGeom::Geometry geom (3);
     geom.addRandom(sz);
-    timer ( giftWrap (geom) );
+    // timer ( gHullSerial (geom) );
+    timer ( gHullSerial (geom) );
 
-    // for ( const auto & func : {giftWrap, grahamScan, cudaHull} ) { 
+    // for ( const auto & func : {giftWrap, grahamScan} ) { 
     //   CompGeom::Geometry geom (2);
     //   geom.addRandom(sz);
     //   timer ( func ( geom ) );
     // }
 
-    // for ( const auto & func : {insertion3D, gHullSerial, gHull} ) { 
+    // for ( const auto & func : {insertion3D, gHullSerial} ) { 
     //   CompGeom::Geometry geom (3);
     //   geom.addRandom(sz);
     //   timer ( func ( geom ) );
     // }
     printf("\n");
+    fflush(stdout);
   }
 
   

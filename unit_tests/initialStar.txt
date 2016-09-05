@@ -1,0 +1,94 @@
+META DATA 
+TYPE Convex Hull
+Number of Points 15
+Number of Timesteps 7
+
+POINT 0 0 0 0
+POINT 1 0 -1 0
+POINT 2 1 0 0
+POINT 3 0 0 1
+POINT 4 -1 0 0
+POINT 5 0 1 0
+POINT 6 0 0 -1
+POINT 7 0 0 0
+POINT 8 2 0 0
+POINT 9 0 0 2
+POINT 10 -2 0 0
+POINT 11 0 2 0
+POINT 12 0 0 -2
+POINT 13 -2 0 2
+POINT 14 0 0 3
+
+
+Timestep 0
+Number of Triangles 4
+START HULL
+1 0 2
+1 2 3
+1 3 4
+1 4 0
+
+
+Timestep 1
+Number of Triangles 4
+START HULL
+1 2 3
+1 3 4
+1 4 6
+1 6 2
+
+
+Timestep 2
+Number of Triangles 4
+START HULL
+1 3 4
+1 4 6
+1 6 8
+1 8 3
+
+
+Timestep 3
+Number of Triangles 4
+START HULL
+1 4 6
+1 6 8
+1 8 9
+1 9 4
+
+
+Timestep 4
+Number of Triangles 4
+START HULL
+1 6 8
+1 8 9
+1 9 10
+1 10 6
+
+
+Timestep 5
+Number of Triangles 4
+START HULL
+1 8 9
+1 9 10
+1 10 12
+1 12 8
+
+
+Timestep 6
+Number of Triangles 5
+START HULL
+1 8 9
+1 9 13
+1 13 10
+1 10 12
+1 12 8
+
+
+Timestep 7
+Number of Triangles 5
+START HULL
+1 8 14
+1 14 13
+1 13 10
+1 10 12
+1 12 8

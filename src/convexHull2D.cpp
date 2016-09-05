@@ -94,9 +94,10 @@ vector< size_t > grahamScan(const CompGeom::Geometry &geom_orig) {
   // Fill angles with the angle each line op
   // makes with the x-axis, from [-pi,pi]
   vector<float> angles(geom.size());
-  for ( size_t i=0; i<angles.size(); i++ ) {
-    angles[i] = atan2 ( geom[i][1], geom[i][0] );
-  }
+  transform ( geom.begin(), geom.end(), angles.begin(), [] ( CompGeom::Point p ) 
+	      {
+		return atan2 ( p[1], p[0] );
+	      } );
 
   // sort indexes based on comparing values in v
   // Shamelessly stolen from Stack Exchange
